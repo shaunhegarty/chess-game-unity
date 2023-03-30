@@ -23,33 +23,33 @@ public class Piece : MonoBehaviour
 
     private void OnMouseDrag()
     {
+        HighlightTargetSquare();
+    }
+
+    private void HighlightTargetSquare()
+    {
         Vector3 fwd = -1 * (Camera.main.transform.position - transform.position);
-      
+
         Ray ray = new(transform.position, fwd);
         Debug.DrawRay(ray.origin, ray.direction, Color.blue);
+
         if (Physics.Raycast(ray, out RaycastHit hit))
         {
-            transform.position = Vector3.Slerp(transform.position, hit.transform.position, Time.deltaTime);
             BoardSquare square = hit.transform.gameObject.GetComponent<BoardSquare>();
             // Are we hitting something? Are we hitting something different to the last time?
             if (square != null && !ReferenceEquals(highlightedSquare, square))
             {
                 // Yes, highlight whatever we're hitting
-                Debug.Log($"Highlighting {square}");
                 square.Highlight();
                 if (highlightedSquare != null)
                 {
-                    Debug.Log($"DeHighlighting {highlightedSquare}");
-                    // Unhighlight the old and 
+                    // Unhighlight the old
                     highlightedSquare.Dehighlight();
-                    
                 }
                 highlightedSquare = square;
-
-
-            } else if (square == null && highlightedSquare != null)
+            }
+            else if (square == null && highlightedSquare != null)
             {
-                Debug.Log($"DeHighlighting {highlightedSquare}");
                 highlightedSquare.Dehighlight();
                 highlightedSquare = null;
             }

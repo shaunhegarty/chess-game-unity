@@ -4,22 +4,52 @@ using UnityEngine;
 
 public class BoardSquare : MonoBehaviour
 {
+    public Material white;
+    public Material black;
+    public Team squareTeam;
 
-    Material material;
+    Material currentMaterial;
+    Renderer squareRenderer;
     // Start is called before the first frame update
     void Start()
     {
-        material = GetComponent<Renderer>().material;
+        squareRenderer = GetComponent<Renderer>();
+        UpdateMaterials();        
+    }
+
+    public void SetTeam(Team team)
+    {
+        squareTeam = team;
+    }
+
+    private void UpdateMaterials()
+    {
+        if (squareTeam == Team.White)
+        {
+            currentMaterial = Instantiate(white);
+        }
+        else
+        {
+            currentMaterial = Instantiate(black);
+        }
+
+        squareRenderer.material = currentMaterial;
     }
 
     public void Highlight()
     {
-        material.EnableKeyword("_EMISSION");
-        material.SetColor("_EmissionColor", new Color(0, 0.3f, 0));
+        currentMaterial.EnableKeyword("_EMISSION");
+        currentMaterial.SetColor("_EmissionColor", new Color(0, 0.3f, 0));
     }
 
     public void Dehighlight()
     {
-        material.DisableKeyword("_EMISSION");
+        currentMaterial.DisableKeyword("_EMISSION");
     }
 }
+
+public enum Team
+{
+    Black, White
+}
+
