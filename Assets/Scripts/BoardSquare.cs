@@ -12,11 +12,6 @@ public class BoardSquare : MonoBehaviour
         material = GetComponent<Renderer>().material;
     }
 
-    private void OnMouseEnter()
-    {
-        Highlight();
-    }
-
     public void Highlight()
     {
         material.EnableKeyword("_EMISSION");
@@ -26,10 +21,5 @@ public class BoardSquare : MonoBehaviour
     public void Dehighlight()
     {
         material.DisableKeyword("_EMISSION");
-    }
-
-    private void OnMouseExit()
-    {
-        Dehighlight();
     }
 }

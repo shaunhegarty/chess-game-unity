@@ -66,19 +66,4 @@ public class Piece : MonoBehaviour
             highlightedSquare = null;            
         }
     }
-
-    Vector3 mousePositionOnClick;
-
-    /* This all works but I don't really know why */
-
-    private Vector3 GetMousePosition()
-    {
-        return Camera.main.WorldToScreenPoint(transform.position);
-    }
-
-    private void OnMouseDown()
-    {
-        // difference from transform centre screen position to mouse screen position
-        mousePositionOnClick = Input.mousePosition - GetMousePosition();
-    }
 }
