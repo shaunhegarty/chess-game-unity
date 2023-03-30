@@ -10,10 +10,18 @@ public class BoardSquare : MonoBehaviour
 
     Material currentMaterial;
     Renderer squareRenderer;
-    // Start is called before the first frame update
+
+    public Vector3 BasePosition { get; private set; }
+
+    bool highlighted = false;
+
+    float positionHighlightOffset = 0.05f;
+    float positionHighlightOffsetSpeed = 1f;
+
     void Start()
     {
         squareRenderer = GetComponent<Renderer>();
+        BasePosition = transform.position;
         UpdateMaterials();        
     }
 
@@ -36,14 +44,30 @@ public class BoardSquare : MonoBehaviour
         squareRenderer.material = currentMaterial;
     }
 
+    public void Update()
+    {
+        if (highlighted)
+        {
+            if (transform.position.y < BasePosition.y + positionHighlightOffset)
+            {
+                transform.position = transform.position + new Vector3(0, positionHighlightOffsetSpeed * Time.deltaTime, 0);
+            }            
+        } else if (transform.position.y > BasePosition.y)
+        {
+            transform.position = transform.position - new Vector3(0, positionHighlightOffsetSpeed * Time.deltaTime, 0);
+        }
+    }
+
     public void Highlight()
     {
-        currentMaterial.EnableKeyword("_EMISSION");
+        highlighted = true;
+        currentMaterial.EnableKeyword("_EMISSION");        
         currentMaterial.SetColor("_EmissionColor", new Color(0, 0.3f, 0));
     }
 
     public void Dehighlight()
     {
+        highlighted = false;
         currentMaterial.DisableKeyword("_EMISSION");
     }
 }

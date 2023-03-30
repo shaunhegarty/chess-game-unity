@@ -18,7 +18,7 @@ public class Piece : MonoBehaviour
     void SetPositionToTargetSquare()
     {
         transform.localPosition = positionOffset;
-        transform.parent.position = currentPosition.transform.position;
+        transform.parent.position = currentPosition.BasePosition;
     }
 
     private void OnMouseDrag()
@@ -28,9 +28,9 @@ public class Piece : MonoBehaviour
 
     private void HighlightTargetSquare()
     {
-        Vector3 fwd = -1 * (Camera.main.transform.position - transform.position);
+        //Vector3 fwd = -1 * (Camera.main.transform.position - transform.position);
 
-        Ray ray = new(transform.position, fwd);
+        Ray ray = new(transform.position, Vector3.down);
         Debug.DrawRay(ray.origin, ray.direction, Color.blue);
 
         if (Physics.Raycast(ray, out RaycastHit hit))
