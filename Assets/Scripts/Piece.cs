@@ -9,16 +9,51 @@ public class Piece : MonoBehaviour
 
     private BoardSquare highlightedSquare;
 
-    // Start is called before the first frame update
-    void Start()
-    {        
-        SetPositionToTargetSquare();
+    private Vector2Int allowedMove = new Vector2Int(1, 1); // Forward, Sideways
+    private List<BoardSquare> allowedSquares;
+
+    public void SetSquare(BoardSquare square)
+    {
+        currentPosition = square;
     }
 
     void SetPositionToTargetSquare()
     {
         transform.localPosition = positionOffset;
         transform.parent.position = currentPosition.BasePosition;
+        GetValidSquares();
+    }
+
+    public void SetPositionToTargetSquare(BoardSquare square)
+    {
+        SetSquare(square);
+        SetPositionToTargetSquare();                
+    }
+
+    private void GetValidSquares()
+    {
+        allowedSquares = new();
+
+        Vector2Int currentIndex = currentPosition.Index;
+        float allowedDistance = Vector2Int.Distance(Vector2Int.zero, allowedMove);
+
+        foreach (List<BoardSquare> row in MainManager.Instance.ChessGame.Board.AllSquares)
+        {
+            foreach(BoardSquare square in row)
+            {
+                if(Vector2Int.Distance(currentIndex, square.Index) <= allowedDistance) {
+                    allowedSquares.Add(square);
+                }
+            }
+        }
+    }
+
+    private void OnMouseDown()
+    {
+        if (allowedSquares == null)
+        {
+            GetValidSquares();
+        }
     }
 
     private void OnMouseDrag()
@@ -36,8 +71,9 @@ public class Piece : MonoBehaviour
         if (Physics.Raycast(ray, out RaycastHit hit))
         {
             BoardSquare square = hit.transform.gameObject.GetComponent<BoardSquare>();
+            bool allowed = allowedSquares.Contains(square);
             // Are we hitting something? Are we hitting something different to the last time?
-            if (square != null && !ReferenceEquals(highlightedSquare, square))
+            if (square != null && !ReferenceEquals(highlightedSquare, square) && allowed)
             {
                 // Yes, highlight whatever we're hitting
                 square.Highlight();
@@ -48,7 +84,7 @@ public class Piece : MonoBehaviour
                 }
                 highlightedSquare = square;
             }
-            else if (square == null && highlightedSquare != null)
+            else if ((square == null || !allowed) && highlightedSquare != null)
             {
                 highlightedSquare.Dehighlight();
                 highlightedSquare = null;

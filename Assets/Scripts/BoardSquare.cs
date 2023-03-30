@@ -4,19 +4,21 @@ using UnityEngine;
 
 public class BoardSquare : MonoBehaviour
 {
+    // Settings
     public Material white;
     public Material black;
     public Team squareTeam;
 
+    public Vector2Int Index;
+
+    // Components
     Material currentMaterial;
     Renderer squareRenderer;
 
+    // State
     public Vector3 BasePosition { get; private set; }
+    bool highlighted = false;    
 
-    bool highlighted = false;
-
-    float positionHighlightOffset = 0.05f;
-    float positionHighlightOffsetSpeed = 1f;
 
     void Start()
     {
@@ -25,34 +27,41 @@ public class BoardSquare : MonoBehaviour
         UpdateMaterials();        
     }
 
+    public void Update()
+    {
+        OffsetIfHighlighted();
+    }
+
     public void SetTeam(Team team)
     {
         squareTeam = team;
     }
 
+    public void SetIndex(Vector2Int index)
+    {
+        Index = index;
+    }
+
     private void UpdateMaterials()
     {
-        if (squareTeam == Team.White)
-        {
-            currentMaterial = Instantiate(white);
-        }
-        else
-        {
-            currentMaterial = Instantiate(black);
-        }
-
+        currentMaterial = squareTeam == Team.White ? Instantiate(white) : Instantiate(black);
         squareRenderer.material = currentMaterial;
     }
 
-    public void Update()
+    /* Highlight, colour and offset */
+    float positionHighlightOffset = 0.05f;
+    float positionHighlightOffsetSpeed = 1f;
+
+    private void OffsetIfHighlighted()
     {
         if (highlighted)
         {
             if (transform.position.y < BasePosition.y + positionHighlightOffset)
             {
                 transform.position = transform.position + new Vector3(0, positionHighlightOffsetSpeed * Time.deltaTime, 0);
-            }            
-        } else if (transform.position.y > BasePosition.y)
+            }
+        }
+        else if (transform.position.y > BasePosition.y)
         {
             transform.position = transform.position - new Vector3(0, positionHighlightOffsetSpeed * Time.deltaTime, 0);
         }

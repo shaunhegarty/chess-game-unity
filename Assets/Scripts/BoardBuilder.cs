@@ -5,21 +5,23 @@ using UnityEngine;
 public class BoardBuilder : MonoBehaviour
 {
     public GameObject squarePrefab;
+
     private BoxCollider squareCollider;
-    private List<List<BoardSquare>> allSquares = new();
+    public List<List<BoardSquare>> AllSquares { get; private set; } = new();
 
     // Start is called before the first frame update
     void Start()
     {
         squareCollider = squarePrefab.GetComponent<BoxCollider>();
-        BuildBoard(8);
+        BuildBoard(MainManager.Instance.ChessGame.boardSize);
+        MainManager.Instance.ChessGame.SetReadyForPieces(true);
     }
 
-    void BuildBoard(int size)
+    public void BuildBoard(int size)
     {
         for (int i = 0; i < size; i++)
         {
-            allSquares.Add(BuildRow(size, i));
+            AllSquares.Add(BuildRow(size, i));
         }
     }
 
@@ -27,22 +29,29 @@ public class BoardBuilder : MonoBehaviour
     {
         List<BoardSquare> row = new();
         Vector3 squareSize = squareCollider.size;
-        for (int i = rowIndex; i < size + rowIndex; i++)
+        for (int i = 0; i < size; i++)
         {
-            Vector3 position = new((i - rowIndex) * squareSize.x, squarePrefab.transform.position.y, rowIndex * squareSize.z);
-            GameObject square = Instantiate(squarePrefab, position, squarePrefab.transform.rotation);
-            BoardSquare bSquare = square.GetComponent<BoardSquare>();
-            if (i % 2 == 0)
-            {
-                bSquare.SetTeam(Team.Black);
-            }
-            else
-            {
-                bSquare.SetTeam(Team.White);
-            }
+            Vector3 position = new(
+                x: i * squareSize.x, 
+                y: squarePrefab.transform.position.y, 
+                z: rowIndex * squareSize.z
+            );
+            Team team = (i + rowIndex) % 2 == 0 ? Team.Black : Team.White;
+            Vector2Int index = new(rowIndex, i);
+            BoardSquare bSquare = CreateSquare(position, team, index);
             row.Add(bSquare);
         }
         return row;
+    }
+
+    BoardSquare CreateSquare(Vector3 squarePosition, Team team, Vector2Int index)
+    {
+        GameObject square = Instantiate(squarePrefab, squarePosition, squarePrefab.transform.rotation);
+        square.transform.parent = transform;
+        BoardSquare bSquare = square.GetComponent<BoardSquare>();
+        bSquare.SetTeam(team);
+        bSquare.SetIndex(index);
+        return bSquare;
     }
 
     // Update is called once per frame
