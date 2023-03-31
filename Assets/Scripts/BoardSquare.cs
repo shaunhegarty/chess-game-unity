@@ -11,6 +11,10 @@ public class BoardSquare : MonoBehaviour
 
     public Vector2Int Index;
 
+    private Color targetingColor = new(0, 0.5f, 0);
+    private Color candidateColor = new(0, 0.5f, 0.5f);
+    private Color originalColour;
+
     // Components
     Material currentMaterial;
     Renderer squareRenderer;
@@ -46,6 +50,7 @@ public class BoardSquare : MonoBehaviour
     private void UpdateMaterials()
     {
         currentMaterial = squareTeam == Team.White ? Instantiate(white) : Instantiate(black);
+        originalColour = currentMaterial.GetColor("_Color");
         squareRenderer.material = currentMaterial;
     }
 
@@ -89,15 +94,17 @@ public class BoardSquare : MonoBehaviour
         } else
         {
             currentMaterial.DisableKeyword("_EMISSION");
+            currentMaterial.SetColor("_Color", originalColour);
             return;
         }
         
         if (movementTarget)
         {
-            currentMaterial.SetColor("_EmissionColor", new Color(0, 0.3f, 0));
+            currentMaterial.SetColor("_EmissionColor", targetingColor);
         } else if (movementCandidate)
-        {
-            currentMaterial.SetColor("_EmissionColor", new Color(0, 0.3f, 0.3f));
+        {            
+            currentMaterial.SetColor("_Color", originalColour * 0.8f);            
+            currentMaterial.SetColor("_EmissionColor", candidateColor);
         }
         
     }
