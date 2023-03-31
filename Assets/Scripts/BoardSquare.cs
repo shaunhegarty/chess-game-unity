@@ -17,7 +17,8 @@ public class BoardSquare : MonoBehaviour
 
     // State
     public Vector3 BasePosition { get; private set; }
-    bool highlighted = false;    
+    bool movementTarget = false;
+    bool movementCandidate = false;
 
 
     void Start()
@@ -54,7 +55,7 @@ public class BoardSquare : MonoBehaviour
 
     private void OffsetIfHighlighted()
     {
-        if (highlighted)
+        if (movementTarget)
         {
             if (transform.position.y < BasePosition.y + positionHighlightOffset)
             {
@@ -67,17 +68,38 @@ public class BoardSquare : MonoBehaviour
         }
     }
 
-    public void Highlight()
+    public void SetAsTarget(bool isTarget)
     {
-        highlighted = true;
-        currentMaterial.EnableKeyword("_EMISSION");        
-        currentMaterial.SetColor("_EmissionColor", new Color(0, 0.3f, 0));
+        movementTarget = isTarget;
+        UpdateHighlight();
     }
 
-    public void Dehighlight()
+
+    public void SetAsCandidate(bool isCandidate)
     {
-        highlighted = false;
-        currentMaterial.DisableKeyword("_EMISSION");
+        movementCandidate = isCandidate;
+        UpdateHighlight();
+    }
+
+    private void UpdateHighlight()
+    {
+        if (movementTarget || movementCandidate)
+        {
+            currentMaterial.EnableKeyword("_EMISSION");
+        } else
+        {
+            currentMaterial.DisableKeyword("_EMISSION");
+            return;
+        }
+        
+        if (movementTarget)
+        {
+            currentMaterial.SetColor("_EmissionColor", new Color(0, 0.3f, 0));
+        } else if (movementCandidate)
+        {
+            currentMaterial.SetColor("_EmissionColor", new Color(0, 0.3f, 0.3f));
+        }
+        
     }
 }
 

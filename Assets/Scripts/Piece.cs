@@ -54,11 +54,35 @@ public class Piece : MonoBehaviour
         {
             GetValidSquares();
         }
+        HighlightCandidateSquares(true);
+
+    }
+
+    private void OnMouseUp()
+    {
+        HighlightCandidateSquares(false);
+
+        if (highlightedSquare != null)
+        {
+            currentPosition = highlightedSquare;            
+            highlightedSquare.SetAsTarget(false);
+            highlightedSquare = null;
+        }
+        SetPositionToTargetSquare();
+
     }
 
     private void OnMouseDrag()
     {
         HighlightTargetSquare();
+    }
+
+    private void HighlightCandidateSquares(bool isCandidate)
+    {
+        foreach (BoardSquare square in allowedSquares)
+        {
+            square.SetAsCandidate(isCandidate);
+        }
     }
 
     private void HighlightTargetSquare()
@@ -76,30 +100,21 @@ public class Piece : MonoBehaviour
             if (square != null && !ReferenceEquals(highlightedSquare, square) && allowed)
             {
                 // Yes, highlight whatever we're hitting
-                square.Highlight();
+                square.SetAsTarget(true);
                 if (highlightedSquare != null)
                 {
                     // Unhighlight the old
-                    highlightedSquare.Dehighlight();
+                    highlightedSquare.SetAsTarget(false);
                 }
                 highlightedSquare = square;
             }
             else if ((square == null || !allowed) && highlightedSquare != null)
             {
-                highlightedSquare.Dehighlight();
+                highlightedSquare.SetAsTarget(false);
                 highlightedSquare = null;
             }
         }
     }
 
-    private void OnMouseUp()
-    {
-        if (highlightedSquare != null)
-        {
-            currentPosition = highlightedSquare;
-            SetPositionToTargetSquare();
-            highlightedSquare.Dehighlight();
-            highlightedSquare = null;            
-        }
-    }
+
 }
