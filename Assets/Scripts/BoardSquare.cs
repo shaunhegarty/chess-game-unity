@@ -4,6 +4,9 @@ using UnityEngine;
 
 public class BoardSquare : MonoBehaviour
 {
+    // Game Objects
+    public TextMesh IndexText;
+
     // Settings
     public Material white;
     public Material black;
@@ -23,6 +26,11 @@ public class BoardSquare : MonoBehaviour
     public Vector3 BasePosition { get; private set; }
     bool movementTarget = false;
     bool movementCandidate = false;
+
+    // properties
+    public int Column { get { return Index.y; } }
+    public char ColumnLetter { get { return (char)('A' + Index.y); } }
+    public int Row { get { return Index.x + 1; } }
 
 
     void Start()
@@ -45,6 +53,12 @@ public class BoardSquare : MonoBehaviour
     public void SetIndex(Vector2Int index)
     {
         Index = index;
+        IndexText.text = $"{ColumnLetter}{Row}";
+    }
+
+    public void SetBasePosition(Vector3 position)
+    {
+        BasePosition = position;
     }
 
     private void UpdateMaterials()

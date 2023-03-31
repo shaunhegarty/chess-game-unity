@@ -8,11 +8,13 @@ public class Piece : MonoBehaviour
     private readonly Vector3 positionOffset = new(0, 0.35f, 0);
     private MovementConstraint movementConstraint;
     public MovementTypes movementType = MovementTypes.Queen;
+    public Team team = Team.White;
 
     // State
     public BoardSquare currentSquare;
     private BoardSquare highlightedSquare;
     private List<BoardSquare> allowedSquares;
+    public int MoveCount { get; private set; }
 
     private void Start()
     {
@@ -38,10 +40,18 @@ public class Piece : MonoBehaviour
             case MovementTypes.Knight:
                 movementConstraint = MovementConstraint.Knight;
                 break;
+            case MovementTypes.Pawn:
+                movementConstraint = new PawnMovement(this);
+                break;
 
             default:
                 break;
         }
+    }
+
+    public void UpdateMoveCount()
+    {
+        MoveCount++;
     }
 
     public void SetSquare(BoardSquare square)
@@ -76,8 +86,6 @@ public class Piece : MonoBehaviour
             }
         }
     }
-
-
     
     private void OnMouseDown()
     {
@@ -98,6 +106,7 @@ public class Piece : MonoBehaviour
             currentSquare = highlightedSquare;            
             highlightedSquare.SetAsTarget(false);
             highlightedSquare = null;
+            UpdateMoveCount();
         }
         SetPositionToTargetSquare();
 
@@ -148,80 +157,5 @@ public class Piece : MonoBehaviour
     }
 }
 
-public enum MovementTypes
-{
-    King, Queen, Bishop, Rook, Knight
-}
 
-public abstract class MovementConstraint
-{
-    public static MovementConstraint King = new KingMovement();
-    public static MovementConstraint Queen = new QueenMovement();
-    public static MovementConstraint Bishop = new BishopMovement();
-    public static MovementConstraint Rook = new RookMovement();
-    public static MovementConstraint Knight = new KnightMovement();
-
-    public abstract bool IsMoveAllowed(Vector2Int startLocation, Vector2Int endLocation);
-}
-
-public class KingMovement : MovementConstraint
-{
-    private readonly float movementRange = Mathf.Sqrt(2);
-
-    public override bool IsMoveAllowed(Vector2Int startLocation, Vector2Int endLocation)
-    {
-        return Vector2Int.Distance(startLocation, endLocation) <= movementRange;
-    }
-}
-
-public class QueenMovement : MovementConstraint
-{
-    public override bool IsMoveAllowed(Vector2Int startLocation, Vector2Int endLocation)
-    {
-        var diff = endLocation - startLocation;
-        return (Mathf.Abs(diff.x) == Mathf.Abs(diff.y)) || diff.x == 0 || diff.y == 0;
-    }
-}
-
-public class BishopMovement : MovementConstraint
-{
-    public override bool IsMoveAllowed(Vector2Int startLocation, Vector2Int endLocation)
-    {
-        // For diagonals, the the change is always of the same magnitude for x and y, only the sign can vary
-        // e.g. (2, 2) or (3, 3) or (1, -1)
-        var diff = endLocation - startLocation;
-        return Mathf.Abs(diff.x) == Mathf.Abs(diff.y);
-    }
-}
-
-public class RookMovement : MovementConstraint
-{
-    public override bool IsMoveAllowed(Vector2Int startLocation, Vector2Int endLocation)
-    {
-        // For rooks, only one axis can change
-        var diff = endLocation - startLocation;
-        return diff.x == 0 || diff.y == 0;
-    }    
-}
-
-public class KnightMovement : MovementConstraint
-{
-    private List<Vector2Int> AllowedMoves = new();
-
-    public KnightMovement()
-    {
-        AllowedMoves.Add(new Vector2Int(1, 2));
-        AllowedMoves.Add(new Vector2Int(2, 1));
-    }
-
-    public override bool IsMoveAllowed(Vector2Int startLocation, Vector2Int endLocation)
-    {
-        // Knights may move 2 steps in 1 direction and 1 another. No short steps
-        // That means the only permitted movements are (1, 2) and (2, 1)
-        var diff = endLocation - startLocation;
-        diff.x = Mathf.Abs(diff.x);
-        diff.y = Mathf.Abs(diff.y);
-        return AllowedMoves.Contains(diff);
-    }
-}
 

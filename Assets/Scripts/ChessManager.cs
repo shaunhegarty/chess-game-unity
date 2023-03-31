@@ -20,13 +20,7 @@ public class ChessManager : MonoBehaviour
         readyForPieces = ready;
         if (readyForPieces)
         {
-            chessPiece.SetPositionToTargetSquare(Board.AllSquares[0][0]);
+            chessPiece.SetPositionToTargetSquare(Board.AllSquares[1][1]);
         }        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 }

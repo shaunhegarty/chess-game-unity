@@ -51,6 +51,7 @@ public class BoardBuilder : MonoBehaviour
         BoardSquare bSquare = square.GetComponent<BoardSquare>();
         bSquare.SetTeam(team);
         bSquare.SetIndex(index);
+        bSquare.SetBasePosition(squarePosition);
         return bSquare;
     }
 
