@@ -10,6 +10,7 @@ public class Piece : MonoBehaviour
     private BoardSquare highlightedSquare;
 
     private Vector2Int allowedMove = new Vector2Int(1, 1); // Forward, Sideways
+    private MovementConstraint movementConstraint = new KingMovement();
     private List<BoardSquare> allowedSquares;
 
     public void SetSquare(BoardSquare square)
@@ -32,16 +33,13 @@ public class Piece : MonoBehaviour
 
     private void GetValidSquares()
     {
-        allowedSquares = new();
-
-        Vector2Int currentIndex = currentPosition.Index;
-        float allowedDistance = Vector2Int.Distance(Vector2Int.zero, allowedMove);
+        allowedSquares = new();   
 
         foreach (List<BoardSquare> row in MainManager.Instance.ChessGame.Board.AllSquares)
         {
             foreach(BoardSquare square in row)
             {
-                if(Vector2Int.Distance(currentIndex, square.Index) <= allowedDistance) {
+                if(movementConstraint.IsMoveAllowed(currentPosition.Index, square.Index)) {
                     allowedSquares.Add(square);
                 }
             }
@@ -115,6 +113,21 @@ public class Piece : MonoBehaviour
             }
         }
     }
-
-
 }
+
+
+public abstract class MovementConstraint
+{
+    public abstract bool IsMoveAllowed(Vector2Int startLocation, Vector2Int endLocation);
+}
+
+public class KingMovement : MovementConstraint
+{
+    private readonly float movementRange = Mathf.Sqrt(2);
+
+    public override bool IsMoveAllowed(Vector2Int startLocation, Vector2Int endLocation)
+    {
+        return Vector2Int.Distance(startLocation, endLocation) <= movementRange;
+    }
+}
+
