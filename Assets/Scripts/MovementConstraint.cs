@@ -188,12 +188,16 @@ public class PawnMovement : MovementConstraint
         // TODO: Adjust direction based on Team
 
         BoardSquare baseMoveSquare = SquareFromIndex(startLocation + baseMove);
+        bool baseMoveBlocked = false;
         if (baseMoveSquare != null && baseMoveSquare.occupant == null)
         {
             allowed.Add(baseMoveSquare);
+        } else
+        {
+            baseMoveBlocked = true;
         }
 
-        if (currentPiece.MoveCount == 0)
+        if (currentPiece.MoveCount == 0 && !baseMoveBlocked)
         {
             BoardSquare doubleMoveSquare = SquareFromIndex(startLocation + doubleMove);
             if (doubleMoveSquare != null && doubleMoveSquare.occupant == null)
