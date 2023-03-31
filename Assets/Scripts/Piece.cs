@@ -28,7 +28,7 @@ public class Piece : MonoBehaviour
     public Material whiteMaterial;
     public Material blackMaterial;
     Material currentMaterial;
-    Renderer pieceRenderer;
+
 
     // State
     public BoardSquare currentSquare;
@@ -36,9 +36,14 @@ public class Piece : MonoBehaviour
     private List<BoardSquare> allowedSquares;
     public int MoveCount { get; private set; }
 
+    // Components
+    Renderer pieceRenderer;
+    DragAndDrop pieceDragNDrop;
+
     private void Start()
     {
         pieceRenderer = GetComponent<Renderer>();
+        pieceDragNDrop = GetComponent<DragAndDrop>();
         LoadMovement();
         UpdateMaterials();
     }
@@ -107,30 +112,51 @@ public class Piece : MonoBehaviour
     }
 
     private void GetValidSquares()
-    {
+    {        
         allowedSquares = Movement.GetValidSquares(currentSquare.Index);   
     }
-    
+
+    private bool IsMyTurn => team == MainManager.Instance.ChessGame.teamTurn;
+
     private void OnMouseDown()
     {
-        GetValidSquares();        
-        HighlightCandidateSquares(true);
-
+        if(IsMyTurn)
+        {
+            pieceDragNDrop.DragAndDropEnabled = true;
+            GetValidSquares();
+            HighlightCandidateSquares(true);
+        }
+        
     }
 
     private void OnMouseUp()
     {
-        HighlightCandidateSquares(false);
+        if (IsMyTurn)
+        {
+            pieceDragNDrop.DragAndDropEnabled = false;
+            HighlightCandidateSquares(false);
 
-        if (highlightedSquare != null)
+            if (highlightedSquare != null)
+            {
+                SetPositionToTargetSquare(highlightedSquare);
+                ClearHighlight();
+                UpdateMoveCount();
+                MainManager.Instance.ChessGame.NextTurn();
+            }
+            else
+            {
+                SetPositionToTargetSquare();
+            }
+        }
+    }
+
+
+    private void OnMouseDrag()
+    {
+        if (team == MainManager.Instance.ChessGame.teamTurn)
         {
-            SetPositionToTargetSquare(highlightedSquare);
-            ClearHighlight();            
-            UpdateMoveCount();
-        } else
-        {
-            SetPositionToTargetSquare();
-        }       
+            HighlightTargetSquare();
+        }
     }
 
     private void ClearHighlight()
@@ -139,10 +165,6 @@ public class Piece : MonoBehaviour
         highlightedSquare = null;
     }
 
-    private void OnMouseDrag()
-    {
-        HighlightTargetSquare();
-    }
 
     private void HighlightCandidateSquares(bool isCandidate)
     {

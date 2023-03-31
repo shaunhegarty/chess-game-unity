@@ -15,10 +15,21 @@ public class ChessManager : MonoBehaviour
 
     public int boardSize = 8;
     private bool readyForPieces = false;
+
+    public int turn = 1;
+    public Team teamTurn = Team.White;
+
     // Start is called before the first frame update
     void Start()
     {
         MainManager.Instance.RegisterChessManager(this);
+    }
+
+    public void NextTurn()
+    {
+        turn++;
+        teamTurn = turn % 2 == 0 ? Team.Black : Team.White;
+        Debug.Log($"It's {teamTurn}'s turn");
     }
 
     public void SetReadyForPieces(bool ready)

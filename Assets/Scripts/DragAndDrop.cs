@@ -3,10 +3,16 @@ using UnityEngine;
 public class DragAndDrop : MonoBehaviour
 {
     public float dragPlaneOffset = 1;
+    public bool DragAndDropEnabled;
 
     private void OnMouseDrag()
     {
-        DragByPlane();
+        Debug.Log($"Enabled: {DragAndDropEnabled}");
+        if(DragAndDropEnabled)
+        {
+            DragByPlane();
+        }
+        
     }
 
     // https://forum.unity.com/threads/dragging-objects-on-a-plane.5485/

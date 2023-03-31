@@ -15,7 +15,6 @@ public abstract class MovementConstraint
 
     public BoardSquare SquareFromIndex(Vector2Int index)
     {
-        Debug.Log($"Getting Square {index}");
         try
         {
             return MainManager.Instance.GetBoard()[index.x][index.y];
