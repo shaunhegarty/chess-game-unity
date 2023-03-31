@@ -26,38 +26,56 @@ public class ChessManager : MonoBehaviour
         readyForPieces = ready;
         if (readyForPieces)
         {
-            // Pawns
-            for (int i = 0; i < boardSize; i++)
+            foreach (Team team in new List<Team> { Team.White, Team.Black })
             {
-                SpawnPiece(PawnPrefab, 1, i);                
+                // Pawns
+                for (int i = 0; i < boardSize; i++)
+                {
+                    SpawnPiece(PawnPrefab, 1, i, team);
+                }
+
+                // Rooks
+                SpawnPiece(RookPrefab, 0, 0, team);
+                SpawnPiece(RookPrefab, 0, 7, team);
+
+                // Knights
+                SpawnPiece(KnightPrefab, 0, 1, team);
+                SpawnPiece(KnightPrefab, 0, 6, team);
+
+                // Bishops
+                SpawnPiece(BishopPrefab, 0, 2, team);
+                SpawnPiece(BishopPrefab, 0, 5, team);
+
+                // Queen
+                SpawnPiece(QueenPrefab, 0, 3, team);
+
+                // King
+                SpawnPiece(KingPrefab, 0, 4, team);
             }
 
-            // Rooks
-            SpawnPiece(RookPrefab, 0, 0);
-            SpawnPiece(RookPrefab, 0, 7);
-
-            // Knights
-            SpawnPiece(KnightPrefab, 0, 1);
-            SpawnPiece(KnightPrefab, 0, 6);
-
-            // Bishops
-            SpawnPiece(BishopPrefab, 0, 2);
-            SpawnPiece(BishopPrefab, 0, 5);
-
-            // Queen
-            SpawnPiece(QueenPrefab, 0, 3);
-
-            // King
-            SpawnPiece(KingPrefab, 0, 4);
 
 
         }        
     }
 
-    public void SpawnPiece(Piece piecePrefab, int rowIndex, int colIndex)
+    public void SpawnPiece(Piece piecePrefab, int rowIndex, int colIndex, Team team)
     {
         Piece piece = Instantiate(piecePrefab);
+        piece.team = team;
         piece.transform.parent = new GameObject($"{piecePrefab} {colIndex + 1}").transform;
+
+        int boardSize = Board.AllSquares.Count;
+        // adjust indexes for team;
+        if (team == Team.Black)
+        {
+            rowIndex = boardSize - rowIndex - 1;
+
+            // King and Queen face each other
+            if (!(piece.movementType == MovementTypes.King || piece.movementType == MovementTypes.Queen))
+            {
+                colIndex = boardSize - colIndex - 1;
+            }
+        }
         piece.SetPositionToTargetSquare(Board.AllSquares[rowIndex][colIndex]);
     }
 }

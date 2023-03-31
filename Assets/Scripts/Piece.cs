@@ -24,6 +24,12 @@ public class Piece : MonoBehaviour
     public MovementTypes movementType = MovementTypes.Queen;
     public Team team = Team.White;
 
+    // Materials
+    public Material whiteMaterial;
+    public Material blackMaterial;
+    Material currentMaterial;
+    Renderer pieceRenderer;
+
     // State
     public BoardSquare currentSquare;
     private BoardSquare highlightedSquare;
@@ -32,8 +38,17 @@ public class Piece : MonoBehaviour
 
     private void Start()
     {
+        pieceRenderer = GetComponent<Renderer>();
         LoadMovement();
+        UpdateMaterials();
     }
+
+    private void UpdateMaterials()
+    {
+        currentMaterial = team == Team.White ? Instantiate(whiteMaterial) : Instantiate(blackMaterial);
+        pieceRenderer.material = currentMaterial;
+    }
+
 
     private void LoadMovement()
     {

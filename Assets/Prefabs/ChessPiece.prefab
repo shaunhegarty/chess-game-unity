@@ -128,7 +128,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56cbd18312976a04c8ab7f8ffb82eb54, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  positionOffset: {x: 0, y: 1, z: 0}
   movementType: 0
+  team: 1
+  whiteMaterial: {fileID: 2100000, guid: 1f9d201b51055f04a85486525c9b2eac, type: 2}
+  blackMaterial: {fileID: 2100000, guid: 2c469b41cb85c464cace1998f13940ff, type: 2}
   currentSquare: {fileID: 0}
 --- !u!114 &7904497168159573753
 MonoBehaviour:
@@ -142,3 +146,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c9dc8dd4058d0df49a9169a39222b3f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  dragPlaneOffset: 1

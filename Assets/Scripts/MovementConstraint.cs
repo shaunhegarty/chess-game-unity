@@ -49,6 +49,12 @@ public abstract class DirectionalMovement : MovementConstraint
                 if (square != null && (square.occupant == null || square.occupant.team != currentSquare.occupant.team))
                 {
                     allowed.Add(square);
+
+                    // Include an enemy square so that we can attack it, but don't go any further. 
+                    if (square.occupant != null && square.occupant.team != currentSquare.occupant.team)
+                    {
+                        break;
+                    }
                 }
                 else
                 {
@@ -184,10 +190,11 @@ public class PawnMovement : MovementConstraint
         List<BoardSquare> allowed = new();
         BoardSquare currentSquare = SquareFromIndex(startLocation);
         Piece currentPiece = currentSquare.occupant;
+        
+        // Adjust direction based on Team
+        Vector2Int direction = new (currentPiece.team == Team.Black ? -1 : 1, 1);
 
-        // TODO: Adjust direction based on Team
-
-        BoardSquare baseMoveSquare = SquareFromIndex(startLocation + baseMove);
+        BoardSquare baseMoveSquare = SquareFromIndex(startLocation + baseMove * direction);
         bool baseMoveBlocked = false;
         if (baseMoveSquare != null && baseMoveSquare.occupant == null)
         {
@@ -199,7 +206,7 @@ public class PawnMovement : MovementConstraint
 
         if (currentPiece.MoveCount == 0 && !baseMoveBlocked)
         {
-            BoardSquare doubleMoveSquare = SquareFromIndex(startLocation + doubleMove);
+            BoardSquare doubleMoveSquare = SquareFromIndex(startLocation + doubleMove * direction);
             if (doubleMoveSquare != null && doubleMoveSquare.occupant == null)
             {
                 allowed.Add(doubleMoveSquare);
@@ -208,7 +215,7 @@ public class PawnMovement : MovementConstraint
 
         foreach (Vector2Int attackMove in attackMoves)
         {
-            BoardSquare attackMoveSquare = SquareFromIndex(startLocation + attackMove);
+            BoardSquare attackMoveSquare = SquareFromIndex(startLocation + attackMove * direction);
             if (attackMoveSquare != null && attackMoveSquare.occupant != null && attackMoveSquare.occupant.team != currentPiece.team)
             {
                 allowed.Add(attackMoveSquare);
