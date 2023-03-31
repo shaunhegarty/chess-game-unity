@@ -5,8 +5,22 @@ using UnityEngine;
 public class Piece : MonoBehaviour
 {
     // settings
-    private readonly Vector3 positionOffset = new(0, 0.35f, 0);
+    public Vector3 positionOffset = new(0, 1f, 0);
     private MovementConstraint movementConstraint;
+    public MovementConstraint Movement {
+        get {
+            if (movementConstraint == null)
+            {
+                LoadMovement();
+            }
+            return movementConstraint;
+        }
+        set
+        {
+            movementConstraint = value;
+        }
+    }
+
     public MovementTypes movementType = MovementTypes.Queen;
     public Team team = Team.White;
 
@@ -41,7 +55,7 @@ public class Piece : MonoBehaviour
                 movementConstraint = MovementConstraint.Knight;
                 break;
             case MovementTypes.Pawn:
-                movementConstraint = new PawnMovement(this);
+                movementConstraint = MovementConstraint.Pawn;
                 break;
 
             default:
@@ -63,36 +77,28 @@ public class Piece : MonoBehaviour
     {
         transform.localPosition = positionOffset;
         transform.parent.position = currentSquare.BasePosition;
-        GetValidSquares();
+        // GetValidSquares();
     }
 
     public void SetPositionToTargetSquare(BoardSquare square)
     {
+        if (currentSquare != null)
+        {
+            currentSquare.SetOccupant(null);
+        }        
         SetSquare(square);
+        square.SetOccupant(this);
         SetPositionToTargetSquare();                
     }
 
     private void GetValidSquares()
     {
-        allowedSquares = new();   
-
-        foreach (List<BoardSquare> row in MainManager.Instance.ChessGame.Board.AllSquares)
-        {
-            foreach(BoardSquare square in row)
-            {
-                if(movementConstraint.IsMoveAllowed(currentSquare.Index, square.Index)) {
-                    allowedSquares.Add(square);
-                }
-            }
-        }
+        allowedSquares = Movement.GetValidSquares(currentSquare.Index);   
     }
     
     private void OnMouseDown()
     {
-        if (allowedSquares == null)
-        {
-            GetValidSquares();
-        }
+        GetValidSquares();        
         HighlightCandidateSquares(true);
 
     }
@@ -103,13 +109,19 @@ public class Piece : MonoBehaviour
 
         if (highlightedSquare != null)
         {
-            currentSquare = highlightedSquare;            
-            highlightedSquare.SetAsTarget(false);
-            highlightedSquare = null;
+            SetPositionToTargetSquare(highlightedSquare);
+            ClearHighlight();            
             UpdateMoveCount();
-        }
-        SetPositionToTargetSquare();
+        } else
+        {
+            SetPositionToTargetSquare();
+        }       
+    }
 
+    private void ClearHighlight()
+    {
+        highlightedSquare.SetAsTarget(false);
+        highlightedSquare = null;
     }
 
     private void OnMouseDrag()

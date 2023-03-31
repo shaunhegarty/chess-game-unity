@@ -59,10 +59,10 @@
     <Compile Include="Assets\Scripts\BoardBuilder.cs" />
     <Compile Include="Assets\Scripts\DragAndDrop.cs" />
     <Compile Include="Assets\Scripts\Piece.cs" />
+    <Compile Include="Assets\Scripts\MovementConstraint.cs" />
     <Compile Include="Assets\Scripts\BoardSquare.cs" />
     <Compile Include="Assets\Scripts\ChessManager.cs" />
     <Compile Include="Assets\Scripts\MainManager.cs" />
-    <Compile Include="Assets\Scripts\MovementConstraint.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

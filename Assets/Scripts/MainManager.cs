@@ -11,10 +11,31 @@ public class MainManager : MonoBehaviour
         ChessGame = chessManager;
     }
 
+    public List<List<BoardSquare>> GetBoard()
+    {
+        return ChessGame.Board.AllSquares;
+    }
+
+    public List<BoardSquare> GetSquares()
+    {
+        List<BoardSquare> squares = new();
+        foreach (List<BoardSquare> row in Instance.GetBoard())
+        {
+            foreach (BoardSquare square in row)
+            {
+                squares.Add(square);
+            }
+        }
+        return squares;
+    }
+
+
+
+
     /* Not sure if it's sustainable, but I've made a getter that sets D:
- * The benefit, in theory, is that now I don't need to put is null checks 
- * everywhere or do anything special to ensure that it exists somewhere if I start from any scene other than the first
- * */
+     * The benefit, in theory, is that now I don't need to put null checks 
+     * everywhere or do anything special to ensure that it exists somewhere if I start from any scene other than the first
+     * */
     private static MainManager instance; // use private lower case instance to be the true value
     public static MainManager Instance // then Instance is just property magic from then on
     {

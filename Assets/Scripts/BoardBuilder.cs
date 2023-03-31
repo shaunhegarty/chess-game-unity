@@ -7,7 +7,7 @@ public class BoardBuilder : MonoBehaviour
     public GameObject squarePrefab;
 
     private BoxCollider squareCollider;
-    public List<List<BoardSquare>> AllSquares { get; private set; } = new();
+    public List<List<BoardSquare>> AllSquares { get; private set; } = new();    
 
     // Start is called before the first frame update
     void Start()
