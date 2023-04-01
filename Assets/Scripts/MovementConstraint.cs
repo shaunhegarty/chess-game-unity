@@ -10,14 +10,27 @@ public abstract class MovementConstraint
     public static MovementConstraint Rook = new RookMovement();
     public static MovementConstraint Knight = new KnightMovement();
     public static MovementConstraint Pawn = new PawnMovement();
+    public static Dictionary<PieceType, MovementConstraint> constraints = new() { 
+        { PieceType.King, King },
+        { PieceType.Queen, Queen },
+        { PieceType.Bishop, Bishop },
+        { PieceType.Rook, Rook },
+        { PieceType.Knight, Knight },
+        { PieceType.Pawn, Pawn }
+    };
+    public static MovementConstraint GetMovement(PieceType pieceType)
+    {
+        constraints.TryGetValue(pieceType, out MovementConstraint constraint);
+        return constraint;
+    }
 
-    public abstract List<BoardSquare> GetValidSquares(Vector2Int startLocation);
+    public abstract List<Chess.Square> GetValidSquares(Chess.Board board, Vector2Int startLocation);
 
-    public BoardSquare SquareFromIndex(Vector2Int index)
+    public Chess.Square SquareFromIndex(Chess.Board board, Vector2Int index)
     {
         try
         {
-            return MainManager.Instance.GetBoard()[index.x][index.y];
+            return board.GetSquare(index);
         }
         catch (System.ArgumentOutOfRangeException)
         {
@@ -32,19 +45,19 @@ public abstract class DirectionalMovement : MovementConstraint
 {
     protected List<Vector2Int> directions;
 
-    public override List<BoardSquare> GetValidSquares(Vector2Int startLocation)
+    public override List<Chess.Square> GetValidSquares(Chess.Board board, Vector2Int startLocation)
     {
         // move along each direction until we hit an obstacle
         // if it's on the opposing team, include that square, otherwise exclude it.        
 
-        List<BoardSquare> allowed = new();
+        List<Chess.Square> allowed = new();
         // try each direction
         foreach (Vector2Int direction in directions)
         {
-            BoardSquare currentSquare = SquareFromIndex(startLocation);
+            Chess.Square currentSquare = SquareFromIndex(board, startLocation);
             for (int i = 1; i <= MainManager.Instance.GetBoard().Count; i++)
             {
-                BoardSquare square = SquareFromIndex(startLocation + direction * i);
+                Chess.Square square = SquareFromIndex(board, startLocation + direction * i);
                 if (square != null && (square.occupant == null || square.occupant.team != currentSquare.occupant.team))
                 {
                     allowed.Add(square);
@@ -77,13 +90,13 @@ public class KingMovement : MovementConstraint
 {
     private readonly float movementRange = Mathf.Sqrt(2);
 
-    public override List<BoardSquare> GetValidSquares(Vector2Int startLocation)
+    public override List<Chess.Square> GetValidSquares(Chess.Board board, Vector2Int startLocation)
     {
-        List<BoardSquare> allowed = new();
-        BoardSquare currentSquare = SquareFromIndex(startLocation);
-        foreach (BoardSquare square in MainManager.Instance.GetSquares())
+        List<Chess.Square> allowed = new();
+        Chess.Square currentSquare = SquareFromIndex(board, startLocation);
+        foreach (Chess.Square square in board.GetSquares())
         {
-            if (IsMoveAllowed(startLocation, square.Index) 
+            if (IsMoveAllowed(startLocation, square.position) 
                 && (square.occupant == null || square.occupant.team != currentSquare.occupant.team))
             {
                 allowed.Add(square);
@@ -150,13 +163,13 @@ public class KnightMovement : MovementConstraint
 {
     private readonly List<Vector2Int> AllowedMoves = new() { new Vector2Int(1, 2), new Vector2Int(2, 1) };
 
-    public override List<BoardSquare> GetValidSquares(Vector2Int startLocation)
+    public override List<Chess.Square> GetValidSquares(Chess.Board board, Vector2Int startLocation)
     {
-        List<BoardSquare> allowed = new();
-        BoardSquare currentSquare = SquareFromIndex(startLocation);
-        foreach (BoardSquare square in MainManager.Instance.GetSquares())
+        List<Chess.Square> allowed = new();
+        Chess.Square currentSquare = SquareFromIndex(board, startLocation);
+        foreach (Chess.Square square in board.GetSquares())
         {
-            if (IsMoveAllowed(startLocation, square.Index)
+            if (IsMoveAllowed(startLocation, square.position)
                 && (square.occupant == null || square.occupant.team != currentSquare.occupant.team))
             {
                 allowed.Add(square);
@@ -184,16 +197,16 @@ public class PawnMovement : MovementConstraint
     private readonly List<Vector2Int> attackMoves = new() { new(1, 1), new(1, -1) };
         
 
-    public override List<BoardSquare> GetValidSquares(Vector2Int startLocation)
+    public override List<Chess.Square> GetValidSquares(Chess.Board board, Vector2Int startLocation)
     {
-        List<BoardSquare> allowed = new();
-        BoardSquare currentSquare = SquareFromIndex(startLocation);
-        Piece currentPiece = currentSquare.occupant;
+        List<Chess.Square> allowed = new();
+        Chess.Square currentSquare = SquareFromIndex(board, startLocation);
+        Chess.Piece currentPiece = currentSquare.occupant;
         
         // Adjust direction based on Team
         Vector2Int direction = new (currentPiece.team == Team.Black ? -1 : 1, 1);
 
-        BoardSquare baseMoveSquare = SquareFromIndex(startLocation + baseMove * direction);
+        Chess.Square baseMoveSquare = SquareFromIndex(board, startLocation + baseMove * direction);
         bool baseMoveBlocked = false;
         if (baseMoveSquare != null && baseMoveSquare.occupant == null)
         {
@@ -205,7 +218,7 @@ public class PawnMovement : MovementConstraint
 
         if (currentPiece.MoveCount == 0 && !baseMoveBlocked)
         {
-            BoardSquare doubleMoveSquare = SquareFromIndex(startLocation + doubleMove * direction);
+            Chess.Square doubleMoveSquare = SquareFromIndex(board, startLocation + doubleMove * direction);
             if (doubleMoveSquare != null && doubleMoveSquare.occupant == null)
             {
                 allowed.Add(doubleMoveSquare);
@@ -214,7 +227,7 @@ public class PawnMovement : MovementConstraint
 
         foreach (Vector2Int attackMove in attackMoves)
         {
-            BoardSquare attackMoveSquare = SquareFromIndex(startLocation + attackMove * direction);
+            Chess.Square attackMoveSquare = SquareFromIndex(board, startLocation + attackMove * direction);
             if (attackMoveSquare != null && attackMoveSquare.occupant != null && attackMoveSquare.occupant.team != currentPiece.team)
             {
                 allowed.Add(attackMoveSquare);

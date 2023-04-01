@@ -4,34 +4,40 @@ using UnityEngine;
 
 public class ChessManager : MonoBehaviour
 {
+    // Game Objects
     public BoardBuilder Board;
-    public Piece PawnPrefab;
-    public Piece RookPrefab;
-    public Piece KnightPrefab;
-    public Piece BishopPrefab;
-    public Piece QueenPrefab;
-    public Piece KingPrefab;
+    public GamePiece PawnPrefab;
+    public GamePiece RookPrefab;
+    public GamePiece KnightPrefab;
+    public GamePiece BishopPrefab;
+    public GamePiece QueenPrefab;
+    public GamePiece KingPrefab;
     public Transform pieceParent;
 
+    // Settings
     public int boardSize = 8;
+
+    // State
     private bool readyForPieces = false;
 
     public int turn = 1;
     public Team teamTurn = Team.White;
     public bool GameOver = false;
 
+    public Chess.ChessGame Game { get; private set;  }
 
-    public Dictionary<Team, List<Piece>> teams = new() {
+    public Dictionary<Team, List<GamePiece>> teams = new() {
         { Team.White, new()},
         { Team.Black, new()}
     };
 
     public Dictionary<Team, HashSet<BoardSquare>> teamCoverage;
 
-    // Start is called before the first frame update
     void Start()
     {
         MainManager.Instance.RegisterChessManager(this);
+        Game = new Chess.ChessGame();
+        Game.SetupBoard();
     }
 
     public void SetGameOver()
@@ -46,7 +52,7 @@ public class ChessManager : MonoBehaviour
 
         teamTurn = turn % 2 == 0 ? Team.Black : Team.White; // Switch the teams
 
-        Piece king = GetKing(teamTurn); // King for new Team        
+        GamePiece king = GetKing(teamTurn); // King for new Team        
         if(coverage.Contains(king.currentSquare)) { // Enemy Team can reach the king, therefore it's check, at a minimum
             if(coverage.IsSupersetOf(king.CanMoveTo)) // If the king has no moves outside of what opponent covers -> checkmate
             {
@@ -68,9 +74,9 @@ public class ChessManager : MonoBehaviour
             { Team.Black, new() }
         };
 
-        teams.TryGetValue(teamTurn, out List<Piece> teamPieces);
+        teams.TryGetValue(teamTurn, out List<GamePiece> teamPieces);
         teamCoverage.TryGetValue(teamTurn, out HashSet<BoardSquare> coverage);
-        foreach (Piece piece in teamPieces)
+        foreach (GamePiece piece in teamPieces)
         {
             if(piece.gameObject.activeInHierarchy)
             {
@@ -82,10 +88,20 @@ public class ChessManager : MonoBehaviour
         return coverage;
     }
 
-    private Piece GetKing(Team team)
+    public List<BoardSquare> SquaresToBoardSquares(List<Chess.Square> squares)
     {
-        teams.TryGetValue(team, out List<Piece> pieces);
-        foreach(Piece piece in pieces)
+        List<BoardSquare> boardSquares = new();
+        foreach(Chess.Square square in squares)
+        {
+            boardSquares.Add(Board.AllSquares[square.position.x][square.position.y]);
+        }
+        return boardSquares;
+    }
+
+    private GamePiece GetKing(Team team)
+    {
+        teams.TryGetValue(team, out List<GamePiece> pieces);
+        foreach(GamePiece piece in pieces)
         {
             if(piece.IsKing)
             {
@@ -95,6 +111,23 @@ public class ChessManager : MonoBehaviour
         throw new KeyNotFoundException("Can't find the King!");
     }
 
+    private GamePiece PrefabByType(PieceType pieceType)
+    {
+        Dictionary<PieceType, GamePiece> prefabMapping = new()
+        {
+            { PieceType.King, KingPrefab },
+            { PieceType.Queen, QueenPrefab },
+            { PieceType.Bishop, BishopPrefab },
+            { PieceType.Knight, KnightPrefab },
+            { PieceType.Rook, RookPrefab },
+            { PieceType.Pawn, PawnPrefab },
+        };
+
+        prefabMapping.TryGetValue(pieceType, out GamePiece prefab);
+        return prefab;
+    }
+    private Dictionary<Chess.Piece, GamePiece> pieceMapping = new();
+
     public void SetReadyForPieces(bool ready)
     {
         readyForPieces = ready;
@@ -102,60 +135,30 @@ public class ChessManager : MonoBehaviour
         {
             foreach (Team team in new List<Team> { Team.White, Team.Black })
             {
-                // Pawns
-                for (int i = 0; i < boardSize; i++)
+                Game.pieces.TryGetValue(team, out List<Chess.Piece> pieces);
+                foreach (Chess.Piece piece in pieces)
                 {
-                    SpawnPiece(PawnPrefab, 1, i, team);
+                    SpawnPiece(piece);
                 }
-
-                // Rooks
-                SpawnPiece(RookPrefab, 0, 0, team);
-                SpawnPiece(RookPrefab, 0, 7, team);
-
-                // Knights
-                SpawnPiece(KnightPrefab, 0, 1, team);
-                SpawnPiece(KnightPrefab, 0, 6, team);
-
-                // Bishops
-                SpawnPiece(BishopPrefab, 0, 2, team);
-                SpawnPiece(BishopPrefab, 0, 5, team);
-
-                // Queen
-                SpawnPiece(QueenPrefab, 0, 3, team);
-
-                // King
-                SpawnPiece(KingPrefab, 0, 4, team);
             }
-
-
-
         }        
     }
 
-    public void SpawnPiece(Piece piecePrefab, int rowIndex, int colIndex, Team team)
+    public void SpawnPiece(Chess.Piece chessPiece)
     {
-        Piece piece = Instantiate(piecePrefab);
-        piece.team = team;
-        
-        piece.transform.parent = new GameObject($"{piecePrefab} {colIndex + 1}").transform;
+        GamePiece prefab = PrefabByType(chessPiece.type);
+        GamePiece piece = Instantiate(prefab);
+        piece.team = chessPiece.team;
+        piece.SetPiece(chessPiece);
+
+        int rowIndex = chessPiece.currentSquare.position.x;
+        int colIndex = chessPiece.currentSquare.position.y;
+        piece.transform.parent = new GameObject($"{prefab} {colIndex + 1}").transform;
         piece.transform.parent.parent = pieceParent;
 
-        int boardSize = Board.AllSquares.Count;
-        // adjust indexes for team;
-
         // Add piece to appropriate team list. 
-        teams.TryGetValue(team, out List<Piece> teamPieces);
+        teams.TryGetValue(piece.team, out List<GamePiece> teamPieces);
         teamPieces.Add(piece);
-        if (team == Team.Black) 
-        {
-            rowIndex = boardSize - rowIndex - 1;
-
-            // King and Queen face each other
-            if (!(piece.pieceType == PieceType.King || piece.pieceType == PieceType.Queen))
-            {
-                colIndex = boardSize - colIndex - 1;
-            }
-        }
         piece.SetPositionToTargetSquare(Board.AllSquares[rowIndex][colIndex]);
 
     }

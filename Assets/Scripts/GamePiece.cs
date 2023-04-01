@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Piece : MonoBehaviour
+public class GamePiece : MonoBehaviour
 {
     // settings
     public Vector3 positionOffset = new(0, 1f, 0);
@@ -37,6 +37,10 @@ public class Piece : MonoBehaviour
     public List<BoardSquare> CanMoveTo { get { return allowedSquares; } }
     public int MoveCount { get; private set; }
     public bool canRegicide = false;
+    private Chess.Piece pieceRef;
+
+    // Utility
+    private Chess.ChessGame Game { get { return MainManager.Instance.ChessManager.Game;  } }
 
     // Components
     Renderer pieceRenderer;
@@ -59,30 +63,7 @@ public class Piece : MonoBehaviour
 
     private void LoadMovement()
     {
-        switch (pieceType)
-        {
-            case PieceType.King:
-                movementConstraint = MovementConstraint.King;
-                break;
-            case PieceType.Queen:
-                movementConstraint = MovementConstraint.Queen;
-                break;
-            case PieceType.Rook:
-                movementConstraint = MovementConstraint.Rook;
-                break;
-            case PieceType.Bishop:
-                movementConstraint = MovementConstraint.Bishop;
-                break;
-            case PieceType.Knight:
-                movementConstraint = MovementConstraint.Knight;
-                break;
-            case PieceType.Pawn:
-                movementConstraint = MovementConstraint.Pawn;
-                break;
-
-            default:
-                break;
-        }
+        movementConstraint = MovementConstraint.GetMovement(pieceType);     
     }
 
     public void UpdateMoveCount()
@@ -93,6 +74,11 @@ public class Piece : MonoBehaviour
     public void SetSquare(BoardSquare square)
     {
         currentSquare = square;
+    }
+
+    public void SetPiece(Chess.Piece piece)
+    {
+        pieceRef = piece;
     }
 
     void SetPositionToTargetSquare()
@@ -119,7 +105,8 @@ public class Piece : MonoBehaviour
 
     private void GetValidSquares()
     {        
-        allowedSquares = Movement.GetValidSquares(currentSquare.Index);
+        List<Chess.Square> squares = Movement.GetValidSquares(MainManager.Instance.ChessManager.Game.board, currentSquare.Index);
+        allowedSquares = MainManager.Instance.ChessManager.SquaresToBoardSquares(squares);
     }
 
     private bool CheckCanRegicide()
@@ -141,7 +128,7 @@ public class Piece : MonoBehaviour
         return canRegicide;
     }
 
-    private bool IsMyTurn => team == MainManager.Instance.ChessGame.teamTurn && !MainManager.Instance.ChessGame.GameOver;
+    private bool IsMyTurn => team == MainManager.Instance.ChessManager.teamTurn && !MainManager.Instance.ChessManager.GameOver;
     public bool IsKing => pieceType == PieceType.King;
 
     private void OnMouseDown()
@@ -162,12 +149,16 @@ public class Piece : MonoBehaviour
             pieceDragNDrop.DragAndDropEnabled = false;
             HighlightCandidateSquares(false);
 
+            // Make a Move
             if (highlightedSquare != null)
-            {
+            {                
                 SetPositionToTargetSquare(highlightedSquare);
-                ClearHighlight();
+                Game.MovePiece(pieceRef, highlightedSquare.Index);                
                 UpdateMoveCount();
-                MainManager.Instance.ChessGame.NextTurn();
+
+
+                ClearHighlight();
+                MainManager.Instance.ChessManager.NextTurn();
             }
             else
             {
@@ -205,7 +196,7 @@ public class Piece : MonoBehaviour
         gameObject.SetActive(false);
         if (pieceType == PieceType.King)
         {
-            MainManager.Instance.ChessGame.SetGameOver();
+            MainManager.Instance.ChessManager.SetGameOver();
         }
     }
 

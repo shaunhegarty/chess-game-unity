@@ -13,8 +13,8 @@ public class BoardBuilder : MonoBehaviour
     void Start()
     {
         squareCollider = squarePrefab.GetComponent<BoxCollider>();
-        BuildBoard(MainManager.Instance.ChessGame.boardSize);
-        MainManager.Instance.ChessGame.SetReadyForPieces(true);
+        BuildBoard(MainManager.Instance.ChessManager.boardSize);
+        MainManager.Instance.ChessManager.SetReadyForPieces(true);
     }
 
     public void BuildBoard(int size)

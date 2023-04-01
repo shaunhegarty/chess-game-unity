@@ -26,7 +26,7 @@ public class BoardSquare : MonoBehaviour
     public Vector3 BasePosition { get; private set; }
     bool movementTarget = false;
     bool movementCandidate = false;    
-    public Piece occupant;
+    public GamePiece occupant;
 
     // properties
     public int Column { get { return Index.y; } }
@@ -57,7 +57,7 @@ public class BoardSquare : MonoBehaviour
         IndexText.text = $"{ColumnLetter}{Row}";
     }
 
-    public void SetOccupant(Piece piece)
+    public void SetOccupant(GamePiece piece)
     {
         occupant = piece;
     }

@@ -4,16 +4,16 @@ using UnityEngine;
 
 public class MainManager : MonoBehaviour
 {
-    public ChessManager ChessGame {get; private set;}
+    public ChessManager ChessManager {get; private set;}
 
     public void RegisterChessManager(ChessManager chessManager)
     {
-        ChessGame = chessManager;
+        ChessManager = chessManager;
     }
 
     public List<List<BoardSquare>> GetBoard()
     {
-        return ChessGame.Board.AllSquares;
+        return ChessManager.Board.AllSquares;
     }
 
     public List<BoardSquare> GetSquares()
