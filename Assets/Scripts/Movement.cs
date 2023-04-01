@@ -2,15 +2,15 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public abstract class MovementConstraint
+public abstract class Movement
 {
-    public static MovementConstraint King = new KingMovement();
-    public static MovementConstraint Queen = new QueenMovement();
-    public static MovementConstraint Bishop = new BishopMovement();
-    public static MovementConstraint Rook = new RookMovement();
-    public static MovementConstraint Knight = new KnightMovement();
-    public static MovementConstraint Pawn = new PawnMovement();
-    public static Dictionary<PieceType, MovementConstraint> constraints = new() { 
+    public static Movement King = new KingMovement();
+    public static Movement Queen = new QueenMovement();
+    public static Movement Bishop = new BishopMovement();
+    public static Movement Rook = new RookMovement();
+    public static Movement Knight = new KnightMovement();
+    public static Movement Pawn = new PawnMovement();
+    public static Dictionary<PieceType, Movement> constraints = new() { 
         { PieceType.King, King },
         { PieceType.Queen, Queen },
         { PieceType.Bishop, Bishop },
@@ -18,9 +18,9 @@ public abstract class MovementConstraint
         { PieceType.Knight, Knight },
         { PieceType.Pawn, Pawn }
     };
-    public static MovementConstraint GetMovement(PieceType pieceType)
+    public static Movement GetMovement(PieceType pieceType)
     {
-        constraints.TryGetValue(pieceType, out MovementConstraint constraint);
+        constraints.TryGetValue(pieceType, out Movement constraint);
         return constraint;
     }
 
@@ -41,7 +41,7 @@ public abstract class MovementConstraint
 }
 
 
-public abstract class DirectionalMovement : MovementConstraint
+public abstract class DirectionalMovement : Movement
 {
     protected List<Vector2Int> directions;
 
@@ -86,7 +86,7 @@ public enum PieceType
     King, Queen, Bishop, Rook, Knight, Pawn
 }
 
-public class KingMovement : MovementConstraint
+public class KingMovement : Movement
 {
     private readonly float movementRange = Mathf.Sqrt(2);
 
@@ -159,7 +159,7 @@ public class RookMovement : DirectionalMovement
     }
 }
 
-public class KnightMovement : MovementConstraint
+public class KnightMovement : Movement
 {
     private readonly List<Vector2Int> AllowedMoves = new() { new Vector2Int(1, 2), new Vector2Int(2, 1) };
 
@@ -190,7 +190,7 @@ public class KnightMovement : MovementConstraint
     }
 }
 
-public class PawnMovement : MovementConstraint
+public class PawnMovement : Movement
 {    
     private Vector2Int baseMove = new(1, 0);
     private Vector2Int doubleMove = new(2, 0);

@@ -60,7 +60,7 @@
     <Compile Include="Assets\Scripts\BoardBuilder.cs" />
     <Compile Include="Assets\Scripts\DragAndDrop.cs" />
     <Compile Include="Assets\Scripts\GamePiece.cs" />
-    <Compile Include="Assets\Scripts\MovementConstraint.cs" />
+    <Compile Include="Assets\Scripts\Movement.cs" />
     <Compile Include="Assets\Scripts\BoardSquare.cs" />
     <Compile Include="Assets\Scripts\ChessManager.cs" />
     <Compile Include="Assets\Scripts\MainManager.cs" />

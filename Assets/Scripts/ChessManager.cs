@@ -20,8 +20,6 @@ public class ChessManager : MonoBehaviour
     // State
     private bool readyForPieces = false;
 
-    public int turn = 1;
-    public Team teamTurn = Team.White;
     public bool GameOver = false;
 
     public Chess.ChessGame Game { get; private set;  }
@@ -45,7 +43,7 @@ public class ChessManager : MonoBehaviour
         GameOver = true;
     }
 
-    public void NextTurn()
+    /*public void NextTurn()
     {
         turn++;
         HashSet<BoardSquare> coverage = CalculateTeamCoverage(); // Coverage for team which just took its turn
@@ -59,12 +57,12 @@ public class ChessManager : MonoBehaviour
                 Debug.Log($"That's Checkmate Buddy!");
             } else
             {
-                Debug.Log($"{teamTurn} King is in Check!");
+                // Debug.Log($"{teamTurn} King is in Check!");
             }
             
         }
         Debug.Log($"It's {teamTurn}'s turn");
-    }
+    }*/
 
     private HashSet<BoardSquare> CalculateTeamCoverage()
     {
@@ -74,8 +72,8 @@ public class ChessManager : MonoBehaviour
             { Team.Black, new() }
         };
 
-        teams.TryGetValue(teamTurn, out List<GamePiece> teamPieces);
-        teamCoverage.TryGetValue(teamTurn, out HashSet<BoardSquare> coverage);
+        teams.TryGetValue(Game.TeamTurn, out List<GamePiece> teamPieces);
+        teamCoverage.TryGetValue(Game.TeamTurn, out HashSet<BoardSquare> coverage);
         foreach (GamePiece piece in teamPieces)
         {
             if(piece.gameObject.activeInHierarchy)
@@ -126,7 +124,6 @@ public class ChessManager : MonoBehaviour
         prefabMapping.TryGetValue(pieceType, out GamePiece prefab);
         return prefab;
     }
-    private Dictionary<Chess.Piece, GamePiece> pieceMapping = new();
 
     public void SetReadyForPieces(bool ready)
     {

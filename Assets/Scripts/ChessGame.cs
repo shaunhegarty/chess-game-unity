@@ -6,9 +6,17 @@ namespace Chess
 {
     public class ChessGame
     {
+        // Settings
         private readonly int boardSize = 8;
+
+        // State
         public Board board;
         public Dictionary<Team, List<Piece>> pieces = new();
+        private Team teamInCheck;
+        public int Turn { get; private set; } = 1;
+        public Team TeamTurn { get; private set; } = Team.White;
+        public Team NonTeamTurn { get; private set; } = Team.Black;
+
 
         public ChessGame()
         {
@@ -50,8 +58,8 @@ namespace Chess
                 AddPieceToBoard(PieceType.Bishop, team, new(startRow, IndexByTeam(team, 5)));
 
                 // King and Queen
-                AddPieceToBoard(PieceType.Queen, team, new(startRow, IndexByTeam(team, 3)));
-                AddPieceToBoard(PieceType.King, team, new(startRow, IndexByTeam(team, 4)));
+                AddPieceToBoard(PieceType.Queen, team, new(startRow, 3));
+                AddPieceToBoard(PieceType.King, team, new(startRow, 4));
             }
         }
 
@@ -62,7 +70,7 @@ namespace Chess
 
         private void AddPieceToBoard(PieceType pieceType, Team team, Vector2Int position)
         {
-            Piece piece = new(pieceType, team);
+            Piece piece = new(pieceType, team, board);
             Square square = GetSquareByPosition(position);
             square.AddPiece(piece);
 
@@ -72,14 +80,59 @@ namespace Chess
 
         public void MovePiece(Piece piece, Vector2Int targetPosition)
         {
+            Debug.Log($"Moved {piece.type} to {targetPosition}");
             Square oldSquare = piece.currentSquare;
             oldSquare.RemovePiece(piece);
 
             Square square = GetSquareByPosition(targetPosition);
             square.AddPiece(piece);
 
-            piece.IncrementMoveCount();
+            piece.PostMove();
+
+            NextTurn();
         }
+
+        public void NextTurn()
+        {
+            if (CalculateCheck(TeamTurn))
+            {
+                SetTeamInCheck(NonTeamTurn);
+            }
+            Turn++;
+            TeamTurn = Turn % 2 == 0 ? Team.Black : Team.White;
+            NonTeamTurn = TeamTurn == Team.White ? Team.Black : Team.White;
+
+        }
+
+        public void SetTeamInCheck(Team team)
+        {
+            teamInCheck = team;
+            Debug.Log($"{teamInCheck}'s King is in check");
+        }
+
+        public bool CalculateCheck(Team team)
+        {
+            bool isInCheck = false;
+            // Can black pieces reach the white king
+            pieces.TryGetValue(team, out var teamPieces);            
+            foreach (var piece in teamPieces)
+            {
+                if(piece.CanRegicide)
+                {
+                    isInCheck = true;                    
+                }
+            }
+            return isInCheck;
+        }
+
+        /* public void SimulateMove(Piece piece, Vector2Int targetPosition)
+        {
+            Square oldSquare = piece.currentSquare;
+            oldSquare.RemovePiece(piece);
+
+            Square square = GetSquareByPosition(targetPosition);
+            square.AddPiece(piece);
+        }*/
     }
 
     public enum SquareState
@@ -115,7 +168,7 @@ namespace Chess
 
     public class Board
     {
-        List<List<Chess.Square>> internalBoard;
+        List<List<Square>> internalBoard;
 
         public Board(int boardSize)
         {
@@ -157,20 +210,57 @@ namespace Chess
 
     public class Piece
     {
+        // Inputs
         public PieceType type;
-        public Team team;
-        public Square currentSquare;
-        public int MoveCount { get; private set;  }
+        public Team team;       
+        public Movement PieceMovement { get; private set; }
 
-        public Piece(PieceType pieceType, Team pieceTeam)
+        public Board ChessBoard;
+
+        // State
+        public Square currentSquare;
+        public int MoveCount { get; private set; }
+        public List<Square> allowedSquares;
+        public bool CanRegicide { get; private set; } = false;
+
+        // Property
+        public bool IsKing { get { return type == PieceType.King; } }
+
+
+        public Piece(PieceType pieceType, Team pieceTeam, Board board)
         {
             type = pieceType;
             team = pieceTeam;
+            PieceMovement = Movement.GetMovement(type);
+            ChessBoard = board;
+        }
+        
+
+        // PostMove updates and calculations
+        public void PostMove()
+        {            
+            allowedSquares = GetValidSquares();
+            MoveCount++;
+            CanRegicide = PieceCanRegicide();
         }
 
-        public void IncrementMoveCount()
+        public List<Square> GetValidSquares()
         {
-            MoveCount++;
+            return PieceMovement.GetValidSquares(ChessBoard, currentSquare.position);
+        }
+
+
+        // i.e. can this piece attack the opponent's King
+        public bool PieceCanRegicide()
+        {
+            foreach(Square square in allowedSquares)
+            {
+                if(square.occupant != null && square.occupant.IsKing)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }
