@@ -7,7 +7,6 @@ public class DragAndDrop : MonoBehaviour
 
     private void OnMouseDrag()
     {
-        Debug.Log($"Enabled: {DragAndDropEnabled}");
         if(DragAndDropEnabled)
         {
             DragByPlane();

@@ -107,6 +107,10 @@ public class Piece : MonoBehaviour
             currentSquare.SetOccupant(null);
         }        
         SetSquare(square);
+        if(square.occupant != null)
+        {
+            square.occupant.PieceAttacked();
+        }
         square.SetOccupant(this);
         SetPositionToTargetSquare();                
     }
@@ -172,6 +176,11 @@ public class Piece : MonoBehaviour
         {
             square.SetAsCandidate(isCandidate);
         }
+    }
+
+    public void PieceAttacked()
+    {
+        gameObject.SetActive(false);
     }
 
     private void HighlightTargetSquare()
