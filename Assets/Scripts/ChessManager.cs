@@ -138,6 +138,7 @@ public class ChessManager : MonoBehaviour
         piece.team = team;
         
         piece.transform.parent = new GameObject($"{piecePrefab} {colIndex + 1}").transform;
+        piece.transform.parent.parent = pieceParent;
 
         int boardSize = Board.AllSquares.Count;
         // adjust indexes for team;
