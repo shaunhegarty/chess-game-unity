@@ -18,6 +18,15 @@ public class ChessManager : MonoBehaviour
 
     public int turn = 1;
     public Team teamTurn = Team.White;
+    public bool GameOver = false;
+
+
+    public Dictionary<Team, List<Piece>> teams = new() {
+        { Team.White, new()},
+        { Team.Black, new()}
+    };
+
+    public Dictionary<Team, HashSet<BoardSquare>> teamCoverage;
 
     // Start is called before the first frame update
     void Start()
@@ -25,11 +34,65 @@ public class ChessManager : MonoBehaviour
         MainManager.Instance.RegisterChessManager(this);
     }
 
+    public void SetGameOver()
+    {
+        GameOver = true;
+    }
+
     public void NextTurn()
     {
         turn++;
-        teamTurn = turn % 2 == 0 ? Team.Black : Team.White;
+        HashSet<BoardSquare> coverage = CalculateTeamCoverage(); // Coverage for team which just took its turn
+
+        teamTurn = turn % 2 == 0 ? Team.Black : Team.White; // Switch the teams
+
+        Piece king = GetKing(teamTurn); // King for new Team        
+        if(coverage.Contains(king.currentSquare)) { // Enemy Team can reach the king, therefore it's check, at a minimum
+            if(coverage.IsSupersetOf(king.CanMoveTo)) // If the king has no moves outside of what opponent covers -> checkmate
+            {
+                Debug.Log($"That's Checkmate Buddy!");
+            } else
+            {
+                Debug.Log($"{teamTurn} King is in Check!");
+            }
+            
+        }
         Debug.Log($"It's {teamTurn}'s turn");
+    }
+
+    private HashSet<BoardSquare> CalculateTeamCoverage()
+    {
+        teamCoverage = new()
+        {
+            { Team.White, new() },
+            { Team.Black, new() }
+        };
+
+        teams.TryGetValue(teamTurn, out List<Piece> teamPieces);
+        teamCoverage.TryGetValue(teamTurn, out HashSet<BoardSquare> coverage);
+        foreach (Piece piece in teamPieces)
+        {
+            if(piece.gameObject.activeInHierarchy)
+            {
+                piece.GetAllValidMoves();
+                coverage.UnionWith(piece.CanMoveTo);
+            }
+            
+        }
+        return coverage;
+    }
+
+    private Piece GetKing(Team team)
+    {
+        teams.TryGetValue(team, out List<Piece> pieces);
+        foreach(Piece piece in pieces)
+        {
+            if(piece.IsKing)
+            {
+                return piece;
+            }
+        }
+        throw new KeyNotFoundException("Can't find the King!");
     }
 
     public void SetReadyForPieces(bool ready)
@@ -73,20 +136,26 @@ public class ChessManager : MonoBehaviour
     {
         Piece piece = Instantiate(piecePrefab);
         piece.team = team;
+        
         piece.transform.parent = new GameObject($"{piecePrefab} {colIndex + 1}").transform;
 
         int boardSize = Board.AllSquares.Count;
         // adjust indexes for team;
-        if (team == Team.Black)
+
+        // Add piece to appropriate team list. 
+        teams.TryGetValue(team, out List<Piece> teamPieces);
+        teamPieces.Add(piece);
+        if (team == Team.Black) 
         {
             rowIndex = boardSize - rowIndex - 1;
 
             // King and Queen face each other
-            if (!(piece.movementType == MovementTypes.King || piece.movementType == MovementTypes.Queen))
+            if (!(piece.pieceType == PieceType.King || piece.pieceType == PieceType.Queen))
             {
                 colIndex = boardSize - colIndex - 1;
             }
         }
         piece.SetPositionToTargetSquare(Board.AllSquares[rowIndex][colIndex]);
+
     }
 }

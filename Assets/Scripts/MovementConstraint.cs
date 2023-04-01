@@ -68,7 +68,7 @@ public abstract class DirectionalMovement : MovementConstraint
 }
 
 
-public enum MovementTypes
+public enum PieceType
 {
     King, Queen, Bishop, Rook, Knight, Pawn
 }

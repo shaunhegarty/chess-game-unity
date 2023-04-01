@@ -21,7 +21,7 @@ public class Piece : MonoBehaviour
         }
     }
 
-    public MovementTypes movementType = MovementTypes.Queen;
+    public PieceType pieceType = PieceType.Queen;
     public Team team = Team.White;
 
     // Materials
@@ -34,7 +34,9 @@ public class Piece : MonoBehaviour
     public BoardSquare currentSquare;
     private BoardSquare highlightedSquare;
     private List<BoardSquare> allowedSquares;
+    public List<BoardSquare> CanMoveTo { get { return allowedSquares; } }
     public int MoveCount { get; private set; }
+    public bool canRegicide = false;
 
     // Components
     Renderer pieceRenderer;
@@ -57,24 +59,24 @@ public class Piece : MonoBehaviour
 
     private void LoadMovement()
     {
-        switch (movementType)
+        switch (pieceType)
         {
-            case MovementTypes.King:
+            case PieceType.King:
                 movementConstraint = MovementConstraint.King;
                 break;
-            case MovementTypes.Queen:
+            case PieceType.Queen:
                 movementConstraint = MovementConstraint.Queen;
                 break;
-            case MovementTypes.Rook:
+            case PieceType.Rook:
                 movementConstraint = MovementConstraint.Rook;
                 break;
-            case MovementTypes.Bishop:
+            case PieceType.Bishop:
                 movementConstraint = MovementConstraint.Bishop;
                 break;
-            case MovementTypes.Knight:
+            case PieceType.Knight:
                 movementConstraint = MovementConstraint.Knight;
                 break;
-            case MovementTypes.Pawn:
+            case PieceType.Pawn:
                 movementConstraint = MovementConstraint.Pawn;
                 break;
 
@@ -117,10 +119,30 @@ public class Piece : MonoBehaviour
 
     private void GetValidSquares()
     {        
-        allowedSquares = Movement.GetValidSquares(currentSquare.Index);   
+        allowedSquares = Movement.GetValidSquares(currentSquare.Index);
     }
 
-    private bool IsMyTurn => team == MainManager.Instance.ChessGame.teamTurn;
+    private bool CheckCanRegicide()
+    {
+        foreach(BoardSquare square in allowedSquares)
+        {
+            if(square.occupant != null && square.occupant.team != team && square.occupant.IsKing)
+            {
+                return true;                
+            }
+        }
+        return false;
+    }
+
+    public bool GetAllValidMoves()
+    {
+        GetValidSquares();
+        canRegicide = CheckCanRegicide();
+        return canRegicide;
+    }
+
+    private bool IsMyTurn => team == MainManager.Instance.ChessGame.teamTurn && !MainManager.Instance.ChessGame.GameOver;
+    public bool IsKing => pieceType == PieceType.King;
 
     private void OnMouseDown()
     {
@@ -157,7 +179,7 @@ public class Piece : MonoBehaviour
 
     private void OnMouseDrag()
     {
-        if (team == MainManager.Instance.ChessGame.teamTurn)
+        if (IsMyTurn)
         {
             HighlightTargetSquare();
         }
@@ -179,8 +201,12 @@ public class Piece : MonoBehaviour
     }
 
     public void PieceAttacked()
-    {
+    {        
         gameObject.SetActive(false);
+        if (pieceType == PieceType.King)
+        {
+            MainManager.Instance.ChessGame.SetGameOver();
+        }
     }
 
     private void HighlightTargetSquare()

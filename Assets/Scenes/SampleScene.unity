@@ -365,7 +365,7 @@ Camera:
     height: 1
   near clip plane: 0.01
   far clip plane: 1000
-  field of view: 60
+  field of view: 45
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -390,8 +390,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
-  m_LocalRotation: {x: 0.38268343, y: 0, z: 0, w: 0.92387956}
-  m_LocalPosition: {x: 1.48, y: 3.902, z: -2.46}
+  m_LocalRotation: {x: 0.48495013, y: 0, z: 0, w: 0.8745418}
+  m_LocalPosition: {x: 3.2, y: 10.07, z: -2.46}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -527,6 +527,9 @@ MonoBehaviour:
   KingPrefab: {fileID: 1517029234382821891, guid: 7dc50ef4c858db948a50e9bc8b0da840, type: 3}
   pieceParent: {fileID: 2132749249}
   boardSize: 8
+  turn: 1
+  teamTurn: 1
+  GameOver: 0
 --- !u!1 &2030876592
 GameObject:
   m_ObjectHideFlags: 0

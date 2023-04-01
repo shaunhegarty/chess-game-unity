@@ -64,6 +64,10 @@ PrefabInstance:
       value: Rook
       objectReference: {fileID: 0}
     - target: {fileID: 1517029234382821891, guid: 42d542d2b9850d9438e204f723d34793, type: 3}
+      propertyPath: pieceType
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1517029234382821891, guid: 42d542d2b9850d9438e204f723d34793, type: 3}
       propertyPath: movementType
       value: 3
       objectReference: {fileID: 0}
