@@ -63,6 +63,7 @@
     <Compile Include="Assets\Scripts\BoardSquare.cs" />
     <Compile Include="Assets\Scripts\ChessManager.cs" />
     <Compile Include="Assets\Scripts\MainManager.cs" />
+    <Compile Include="Assets\Scripts\FlyCamera.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
