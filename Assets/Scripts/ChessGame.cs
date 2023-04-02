@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,6 +7,9 @@ namespace Chess
 {
     public class ChessGame
     {
+        // static
+        private static readonly List<Team> Teams = new() { Team.White, Team.Black};
+
         // Settings
         private readonly int boardSize = 8;
 
@@ -16,6 +20,8 @@ namespace Chess
         public int Turn { get; private set; } = 1;
         public Team TeamTurn { get; private set; } = Team.White;
         public Team NonTeamTurn { get; private set; } = Team.Black;
+
+        public bool checkMate = false;
 
 
         public ChessGame()
@@ -34,7 +40,7 @@ namespace Chess
                 { Team.White, new()},
                 { Team.Black, new()}
             };
-            foreach (Team team in new List<Team> { Team.White, Team.Black})
+            foreach (Team team in ChessGame.Teams)
             {
                 int startRow = IndexByTeam(team, 0);
                 // Pawns
@@ -80,27 +86,35 @@ namespace Chess
 
         public void MovePiece(Piece piece, Vector2Int targetPosition)
         {
-            Debug.Log($"Moved {piece.type} to {targetPosition}");
+            Debug.Log($"Moved {piece} to {Square.LabelFromPosition(targetPosition)}");
             Square oldSquare = piece.currentSquare;
-            oldSquare.RemovePiece(piece);
+            oldSquare.RemovePiece();
 
-            Square square = GetSquareByPosition(targetPosition);
-            square.AddPiece(piece);
+            Square targetSquare = GetSquareByPosition(targetPosition);
+            targetSquare.RemovePiece();
+            targetSquare.AddPiece(piece);
 
-            piece.PostMove();
+            piece.PostMove();            
 
             NextTurn();
         }
 
         public void NextTurn()
         {
-            if (CalculateCheck(TeamTurn))
-            {
-                SetTeamInCheck(NonTeamTurn);
-            }
+
             Turn++;
             TeamTurn = Turn % 2 == 0 ? Team.Black : Team.White;
             NonTeamTurn = TeamTurn == Team.White ? Team.Black : Team.White;
+
+            if (CalculateCheckAll(NonTeamTurn))
+            {
+                Debug.Log($"{TeamTurn}'s King is in check");
+                if (IsThatCheckMate(TeamTurn))
+                {
+                    Debug.Log($"That's Checkmate! {NonTeamTurn} Wins!");
+                    checkMate = true;
+                }
+            }
 
         }
 
@@ -108,6 +122,19 @@ namespace Chess
         {
             teamInCheck = team;
             Debug.Log($"{teamInCheck}'s King is in check");
+        }
+
+        public Piece GetKing(Team team)
+        {
+            pieces.TryGetValue(team, out List<Piece> teamPieces);
+            foreach (Piece piece in teamPieces)
+            {
+                if (piece.IsKing)
+                {
+                    return piece;
+                }
+            }
+            throw new KeyNotFoundException("Can't find the King!");
         }
 
         public bool CalculateCheck(Team team)
@@ -125,14 +152,94 @@ namespace Chess
             return isInCheck;
         }
 
-        /* public void SimulateMove(Piece piece, Vector2Int targetPosition)
+        private Team GetOppositeTeam(Team team)
         {
-            Square oldSquare = piece.currentSquare;
-            oldSquare.RemovePiece(piece);
+            return team == Team.Black ? Team.White : Team.Black;
+        }
 
-            Square square = GetSquareByPosition(targetPosition);
-            square.AddPiece(piece);
-        }*/
+        public bool CalculateCheckAll(Team team)
+        {
+            // Can pieces of a given team reach the opposing King
+            HashSet<Square> coverage = new();
+            pieces.TryGetValue(team, out var teamPieces);
+
+            // Add all the covered squares to set
+            foreach (var piece in teamPieces)
+            {                
+                coverage.UnionWith(piece.GetValidSquares());                
+            }
+
+            // Get the opposing King
+            var king = GetKing(GetOppositeTeam(team));
+
+            bool isInCheck = coverage.Contains(king.currentSquare);           
+            return isInCheck;
+        }
+
+        /* Determining CheckMate */
+        // Simulate every possible move for a given turn
+        // If any result in a non-check scenario, then it is not check mate
+        // Only need to do this if the king has been determined to be in check??
+
+        /* Simulating a move */
+        // Update the board state
+        // Do Check Calc
+        // Rewind Board State
+
+        public void SimulateMoveUnderCheck(Piece piece, Vector2Int targetPosition, out bool stillInCheck)
+        {            
+            // Debug.Log($"Simulating {piece} Moving to {Square.LabelFromPosition(targetPosition)}");
+            
+            // Update the board state
+            var oldSquare = piece.currentSquare;
+            var targetSquare = GetSquareByPosition(targetPosition);
+            var pieceAtTarget = targetSquare.occupant;
+
+            oldSquare.RemovePiece();                        
+            targetSquare.AddPiece(piece);
+
+            // Check if move leaves this team in Check            
+            stillInCheck = CalculateCheckAll(GetOppositeTeam(piece.team));
+
+            // Rewind the board state
+            targetSquare.RemovePiece();
+            oldSquare.AddPiece(piece);            
+            if(pieceAtTarget != null)
+            {
+                targetSquare.AddPiece(pieceAtTarget);
+            }
+
+        }
+
+        public bool IsThatCheckMate(Team team)
+        {
+            // Team X is in check, we want to find out if there is any way out. 
+            // Get All the pieces for Team X
+            pieces.TryGetValue(team, out var teamPieces);
+            
+            // For each piece 
+            foreach (var piece in teamPieces)
+            {
+                // Don't bother with pieces which have been taken
+                if(piece.currentSquare == null)
+                {
+                    continue;
+                }
+                // get all the moves
+                var allowedSquares = piece.GetValidSquares();
+
+                // simulate each move, and see if it still results in check
+                foreach (var move in allowedSquares)
+                {
+                    SimulateMoveUnderCheck(piece, move.position, out bool stillInCheck);
+                    if(!stillInCheck)
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
     }
 
     public enum SquareState
@@ -146,6 +253,13 @@ namespace Chess
         public SquareState state;
         public Piece occupant;
 
+        public string Label { get { return LabelFromPosition(position); } }
+
+        public static string LabelFromPosition(Vector2Int pos)
+        {
+            return $"{(char)('A' + pos.y)}{pos.x + 1}";
+        }
+
         public Square(int x, int y)
         {
             position = new Vector2Int(x, y);
@@ -158,11 +272,19 @@ namespace Chess
             piece.currentSquare = this;
         }
 
-        public void RemovePiece(Piece piece)
-        {
-            occupant = null;
+        public void RemovePiece()
+        {            
             state = SquareState.Empty;
-            piece.currentSquare = null;
+            if(occupant != null)
+            {
+                occupant.currentSquare = null;
+                occupant = null;
+            }            
+        }
+
+        public override string ToString()
+        {
+            return Label;
         }
     }
 
@@ -246,7 +368,19 @@ namespace Chess
 
         public List<Square> GetValidSquares()
         {
-            return PieceMovement.GetValidSquares(ChessBoard, currentSquare.position);
+            if(currentSquare == null)
+            {
+                return new();
+            }
+            try
+            {
+                return PieceMovement.GetValidSquares(ChessBoard, currentSquare.position);
+            } catch (NullReferenceException e)
+            {
+                Debug.Log($"What's going on with {this} ... {currentSquare}?");
+                throw e;
+            }
+            
         }
 
 
@@ -261,6 +395,11 @@ namespace Chess
                 }
             }
             return false;
+        }
+
+        public override string ToString()
+        {
+            return $"{team} {type} @ {currentSquare}";
         }
     }
 }
