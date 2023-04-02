@@ -76,7 +76,7 @@ namespace Chess
 
         private void AddPieceToBoard(PieceType pieceType, Team team, Vector2Int position)
         {
-            Piece piece = new(pieceType, team, board);
+            Piece piece = new(pieceType, team, this);
             Square square = GetSquareByPosition(position);
             square.AddPiece(piece);
 
@@ -176,20 +176,15 @@ namespace Chess
             return isInCheck;
         }
 
-        /* Determining CheckMate */
-        // Simulate every possible move for a given turn
-        // If any result in a non-check scenario, then it is not check mate
-        // Only need to do this if the king has been determined to be in check??
-
-        /* Simulating a move */
-        // Update the board state
-        // Do Check Calc
-        // Rewind Board State
-
         public void SimulateMoveUnderCheck(Piece piece, Vector2Int targetPosition, out bool stillInCheck)
-        {            
+        {
+            /* Simulating a move */
+            // Update the board state
+            // Do Check Calc
+            // Rewind Board State */
+
             // Debug.Log($"Simulating {piece} Moving to {Square.LabelFromPosition(targetPosition)}");
-            
+
             // Update the board state
             var oldSquare = piece.currentSquare;
             var targetSquare = GetSquareByPosition(targetPosition);
@@ -212,7 +207,12 @@ namespace Chess
         }
 
         public bool IsThatCheckMate(Team team)
-        {
+        { 
+            /* Determining CheckMate */
+            // Simulate every possible move for a given turn
+            // If any result in a non-check scenario, then it is not check mate
+            // Only need to do this if the king has been determined to be in check??
+        
             // Team X is in check, we want to find out if there is any way out. 
             // Get All the pieces for Team X
             pieces.TryGetValue(team, out var teamPieces);
@@ -337,7 +337,7 @@ namespace Chess
         public Team team;       
         public Movement PieceMovement { get; private set; }
 
-        public Board ChessBoard;
+        public ChessGame Game;
 
         // State
         public Square currentSquare;
@@ -349,12 +349,12 @@ namespace Chess
         public bool IsKing { get { return type == PieceType.King; } }
 
 
-        public Piece(PieceType pieceType, Team pieceTeam, Board board)
+        public Piece(PieceType pieceType, Team pieceTeam, ChessGame game)
         {
             type = pieceType;
             team = pieceTeam;
             PieceMovement = Movement.GetMovement(type);
-            ChessBoard = board;
+            Game = game;
         }
         
 
@@ -372,14 +372,21 @@ namespace Chess
             {
                 return new();
             }
-            try
+
+            var moves = PieceMovement.GetValidSquares(Game.board, currentSquare.position);
+            List<Square> slimMoves = new();
+            foreach(var move in moves)
             {
-                return PieceMovement.GetValidSquares(ChessBoard, currentSquare.position);
-            } catch (NullReferenceException e)
-            {
-                Debug.Log($"What's going on with {this} ... {currentSquare}?");
-                throw e;
+                
+                Game.SimulateMoveUnderCheck(this, move.position, out bool stillInCheck);
+                    
+                if(!stillInCheck)
+                {
+                    slimMoves.Add(move);
+                }
             }
+            return moves;
+
             
         }
 
