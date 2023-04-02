@@ -16,13 +16,20 @@ namespace Chess
         // State
         public Board board;
         public Dictionary<Team, List<Piece>> pieces = new();
-        private Team teamInCheck;
+        private Check checkState = new();
         public int Turn { get; private set; } = 1;
         public Team TeamTurn { get; private set; } = Team.White;
         public Team NonTeamTurn { get; private set; } = Team.Black;
+        public bool CheckMate { get { return checkState.isCheckMate; } }
+        public string LastMove = "";
 
-        public bool checkMate = false;
+        public delegate void NextTurnCallback();
+        private NextTurnCallback nextTurnCallback;
 
+        public void SetNextTurnCallBack(NextTurnCallback cb)
+        {
+            nextTurnCallback = cb;
+        }
 
         public ChessGame()
         {
@@ -32,6 +39,11 @@ namespace Chess
         private int IndexByTeam(Team team, int i)
         {
             return team == Team.White ? i : boardSize - i - 1;
+        }
+
+        private Team GetOppositeTeam(Team team)
+        {
+            return team == Team.Black ? Team.White : Team.Black;
         }
 
         public void SetupBoard()
@@ -86,7 +98,8 @@ namespace Chess
 
         public void MovePiece(Piece piece, Vector2Int targetPosition)
         {
-            Debug.Log($"Moved {piece} to {Square.LabelFromPosition(targetPosition)}");
+            LastMove = $"Moved {piece} to {Square.LabelFromPosition(targetPosition)}";
+
             Square oldSquare = piece.currentSquare;
             oldSquare.RemovePiece();
 
@@ -94,7 +107,9 @@ namespace Chess
             targetSquare.RemovePiece();
             targetSquare.AddPiece(piece);
 
-            piece.PostMove();            
+            piece.PostMove();
+
+            
 
             NextTurn();
         }
@@ -108,20 +123,28 @@ namespace Chess
 
             if (CalculateCheckAll(NonTeamTurn))
             {
-                Debug.Log($"{TeamTurn}'s King is in check");
+                var check = new Check();
+                check.teamInCheck = TeamTurn;
+                check.inCheck = true;
+
                 if (IsThatCheckMate(TeamTurn))
                 {
-                    Debug.Log($"That's Checkmate! {NonTeamTurn} Wins!");
-                    checkMate = true;
+                    check.isCheckMate = true;
                 }
+                
+                SetCheck(check);
+            } else
+            {
+                SetCheck(new Check());
             }
+
+            nextTurnCallback?.Invoke();
 
         }
 
-        public void SetTeamInCheck(Team team)
+        public void SetCheck(Check check)
         {
-            teamInCheck = team;
-            Debug.Log($"{teamInCheck}'s King is in check");
+            checkState = check;
         }
 
         public Piece GetKing(Team team)
@@ -135,26 +158,6 @@ namespace Chess
                 }
             }
             throw new KeyNotFoundException("Can't find the King!");
-        }
-
-        public bool CalculateCheck(Team team)
-        {
-            bool isInCheck = false;
-            // Can black pieces reach the white king
-            pieces.TryGetValue(team, out var teamPieces);            
-            foreach (var piece in teamPieces)
-            {
-                if(piece.CanRegicide)
-                {
-                    isInCheck = true;                    
-                }
-            }
-            return isInCheck;
-        }
-
-        private Team GetOppositeTeam(Team team)
-        {
-            return team == Team.Black ? Team.White : Team.Black;
         }
 
         public bool CalculateCheckAll(Team team)
@@ -240,6 +243,31 @@ namespace Chess
             }
             return true;
         }
+
+        public string GameInfo()
+        {
+            string checkMessage = "";
+            if (checkState.inCheck && checkState.isCheckMate)
+            {
+                checkMessage = $"\nThat's Checkmate! {GetOppositeTeam(checkState.teamInCheck)} Wins!";
+            } else if(checkState.inCheck)
+            {
+                checkMessage = $"{checkState.teamInCheck} is in check!";
+            }                
+
+            return
+                $"Last Move: \n - {LastMove}\n\n" + 
+                $"Turn: {Turn}\n" +
+                $"Team: {TeamTurn}\n" +                
+                $"{checkMessage}";
+        }
+
+        public struct Check
+        {
+            public bool inCheck;
+            public bool isCheckMate;
+            public Team teamInCheck;
+        }
     }
 
     public enum SquareState
@@ -290,7 +318,7 @@ namespace Chess
 
     public class Board
     {
-        List<List<Square>> internalBoard;
+        private readonly List<List<Square>> internalBoard;
 
         public Board(int boardSize)
         {
@@ -309,11 +337,6 @@ namespace Chess
         public Square GetSquare(Vector2Int position)
         {
             return internalBoard[position.x][position.y];
-        }
-
-        public Square GetSquare(int x, int y)
-        {
-            return internalBoard[x][y];
         }
 
         public List<Square> GetSquares()
@@ -343,7 +366,6 @@ namespace Chess
         public Square currentSquare;
         public int MoveCount { get; private set; }
         public List<Square> allowedSquares;
-        public bool CanRegicide { get; private set; } = false;
 
         // Property
         public bool IsKing { get { return type == PieceType.King; } }
@@ -361,9 +383,7 @@ namespace Chess
         // PostMove updates and calculations
         public void PostMove()
         {            
-            allowedSquares = GetValidSquares(simulate: false);
             MoveCount++;
-            CanRegicide = PieceCanRegicide();
         }
 
         public List<Square> GetValidSquares(bool simulate)
@@ -393,20 +413,6 @@ namespace Chess
             
 
             
-        }
-
-
-        // i.e. can this piece attack the opponent's King
-        public bool PieceCanRegicide()
-        {
-            foreach(Square square in allowedSquares)
-            {
-                if(square.occupant != null && square.occupant.IsKing)
-                {
-                    return true;
-                }
-            }
-            return false;
         }
 
         public override string ToString()

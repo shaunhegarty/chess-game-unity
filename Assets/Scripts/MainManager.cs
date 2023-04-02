@@ -16,21 +16,6 @@ public class MainManager : MonoBehaviour
         return ChessManager.Board.AllSquares;
     }
 
-    public List<BoardSquare> GetSquares()
-    {
-        List<BoardSquare> squares = new();
-        foreach (List<BoardSquare> row in Instance.GetBoard())
-        {
-            foreach (BoardSquare square in row)
-            {
-                squares.Add(square);
-            }
-        }
-        return squares;
-    }
-
-
-
 
     /* Not sure if it's sustainable, but I've made a getter that sets D:
      * The benefit, in theory, is that now I don't need to put null checks 

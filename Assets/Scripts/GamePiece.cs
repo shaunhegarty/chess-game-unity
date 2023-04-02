@@ -100,7 +100,7 @@ public class GamePiece : MonoBehaviour
         return canRegicide;
     }
 
-    private bool IsMyTurn => team == MainManager.Instance.ChessManager.Game.TeamTurn && !MainManager.Instance.ChessManager.Game.checkMate;
+    private bool IsMyTurn => team == MainManager.Instance.ChessManager.Game.TeamTurn && !MainManager.Instance.ChessManager.Game.CheckMate;
     public bool IsKing => ChessPiece.IsKing;
 
     private void OnMouseDown()
@@ -160,10 +160,6 @@ public class GamePiece : MonoBehaviour
     public void PieceAttacked()
     {        
         gameObject.SetActive(false);
-        if (IsKing)
-        {
-            MainManager.Instance.ChessManager.SetGameOver();
-        }
     }
 
     private void HighlightTargetSquare()
