@@ -166,7 +166,7 @@ namespace Chess
             // Add all the covered squares to set
             foreach (var piece in teamPieces)
             {                
-                coverage.UnionWith(piece.GetValidSquares());                
+                coverage.UnionWith(piece.GetValidSquares(simulate: false));                
             }
 
             // Get the opposing King
@@ -226,7 +226,7 @@ namespace Chess
                     continue;
                 }
                 // get all the moves
-                var allowedSquares = piece.GetValidSquares();
+                var allowedSquares = piece.GetValidSquares(simulate: false);
 
                 // simulate each move, and see if it still results in check
                 foreach (var move in allowedSquares)
@@ -361,12 +361,12 @@ namespace Chess
         // PostMove updates and calculations
         public void PostMove()
         {            
-            allowedSquares = GetValidSquares();
+            allowedSquares = GetValidSquares(simulate: false);
             MoveCount++;
             CanRegicide = PieceCanRegicide();
         }
 
-        public List<Square> GetValidSquares()
+        public List<Square> GetValidSquares(bool simulate)
         {
             if(currentSquare == null)
             {
@@ -374,18 +374,23 @@ namespace Chess
             }
 
             var moves = PieceMovement.GetValidSquares(Game.board, currentSquare.position);
-            List<Square> slimMoves = new();
-            foreach(var move in moves)
+            if (simulate)
             {
-                
-                Game.SimulateMoveUnderCheck(this, move.position, out bool stillInCheck);
-                    
-                if(!stillInCheck)
+                List<Square> slimMoves = new();
+                foreach(var move in moves)
                 {
-                    slimMoves.Add(move);
+                    Game.SimulateMoveUnderCheck(this, move.position, out bool stillInCheck);
+                    if (!stillInCheck)
+                    {
+                        slimMoves.Add(move);
+                    }
                 }
+                return slimMoves;
+            } else
+            {
+                return moves;
             }
-            return moves;
+            
 
             
         }

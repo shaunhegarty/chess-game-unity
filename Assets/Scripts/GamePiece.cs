@@ -77,7 +77,7 @@ public class GamePiece : MonoBehaviour
 
     private void GetValidSquares()
     {        
-        var squares = ChessPiece.GetValidSquares();
+        var squares = ChessPiece.GetValidSquares(simulate: true);
         allowedSquares = MainManager.Instance.ChessManager.SquaresToBoardSquares(squares);
     }
 
