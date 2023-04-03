@@ -31,6 +31,13 @@ namespace Chess
             nextTurnCallback = cb;
         }
 
+        public delegate void PromotionCallBack(Piece piece);
+        private PromotionCallBack promotionCallBack;
+        public void SetPromotionCallback(PromotionCallBack pcb)
+        {
+            promotionCallBack = pcb;
+        }
+
         public ChessGame()
         {
             board = new Board(boardSize);
@@ -90,6 +97,7 @@ namespace Chess
         {
             Piece piece = new(pieceType, team, this);
             Square square = GetSquareByPosition(position);
+            square.RemovePiece();
             square.AddPiece(piece);
 
             pieces.TryGetValue(team, out List<Piece> teamPieces);
@@ -121,7 +129,13 @@ namespace Chess
                 DoCastle(piece.team);
             }
             
-            piece.PostMove();            
+            piece.PostMove();    
+            
+            // Is there a promotable pawn?
+            if(piece.IsPromotablePawn())
+            {
+                promotionCallBack(piece);
+            }
 
             NextTurn();
         }
@@ -255,7 +269,7 @@ namespace Chess
             // Get the opposing King
             var king = GetKing(GetOppositeTeam(team));
 
-            bool isInCheck = coverage.Contains(king.currentSquare);           
+            bool isInCheck = coverage.Contains(king.currentSquare);
             return isInCheck;
         }
 
@@ -340,6 +354,22 @@ namespace Chess
                 $"Turn: {Turn}\n" +
                 $"Team: {TeamTurn}\n" +                
                 $"{checkMessage}";
+        }
+
+        public Piece PromotePawn(Piece pawn, PieceType promotion)
+        {
+            Debug.Log($"Promoting to {promotion}");
+            var square = pawn.currentSquare;
+            var position = pawn.currentSquare.position;
+            var moveHistory = pawn.MovesList;
+            AddPieceToBoard(promotion, pawn.team, position);
+            square.occupant.MovesList = moveHistory;
+
+            pieces.TryGetValue(pawn.team, out var teamPieces);
+            teamPieces.Remove(pawn);            
+            pawn.PostMove();
+
+            return square.occupant;
         }
 
         public struct Check
@@ -453,6 +483,8 @@ namespace Chess
             }
         }
 
+        public List<Move> MovesList { get => movesList; set => movesList = value; }
+
         public delegate void OnMoveCallback();
         private OnMoveCallback onMoveCallback;
         public void SetOnMoveCallback(OnMoveCallback onMoveCb) => onMoveCallback = onMoveCb;
@@ -464,7 +496,7 @@ namespace Chess
             PieceMovement = Movement.GetMovement(type);
             Game = game;
         }
-        
+
         // PostMove updates and calculations
         public void PostMove()
         {            
@@ -477,10 +509,10 @@ namespace Chess
             {
                 return new();
             }
-
-            var moves = PieceMovement.GetValidSquares(Game.board, currentSquare.position);
+            var moves = PieceMovement.GetValidSquares(Game.board, currentSquare.position);           
             if (simulate)
             {
+
                 List<Square> slimMoves = new();
                 foreach(var move in moves)
                 {
@@ -577,6 +609,12 @@ namespace Chess
                 
             }
             return false;
+        }
+
+        public bool IsPromotablePawn()
+        {
+            int backRow = team == Team.White ? 7 : 0;
+            return type == PieceType.Pawn && currentSquare.position.x == backRow;                                        
         }
     }
 

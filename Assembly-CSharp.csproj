@@ -58,15 +58,15 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\FlyCamera.cs" />
     <Compile Include="Assets\Scripts\BoardBuilder.cs" />
+    <Compile Include="Assets\Scripts\UI\MainMenuUIManager.cs" />
     <Compile Include="Assets\Scripts\DragAndDrop.cs" />
     <Compile Include="Assets\Scripts\GamePiece.cs" />
+    <Compile Include="Assets\Scripts\UI\GameUIManager.cs" />
     <Compile Include="Assets\Scripts\Movement.cs" />
     <Compile Include="Assets\Scripts\BoardSquare.cs" />
     <Compile Include="Assets\Scripts\UI\ChessManager.cs" />
     <Compile Include="Assets\Scripts\ChessGame.cs" />
     <Compile Include="Assets\Scripts\MainManager.cs" />
-    <Compile Include="Assets\Scripts\UI\MainMenuUIManager.cs" />
-    <Compile Include="Assets\Scripts\UI\GameUIManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\TextMesh Pro\Shaders\TMPro.cginc" />

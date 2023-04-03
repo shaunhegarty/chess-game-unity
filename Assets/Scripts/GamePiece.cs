@@ -99,6 +99,14 @@ public class GamePiece : MonoBehaviour
     private bool IsMyTurn => team == MainManager.Instance.ChessManager.Game.TeamTurn && !MainManager.Instance.ChessManager.Game.CheckMate;
     public bool IsKing => ChessPiece.IsKing;
 
+    private void OnMouseOver()
+    {
+        if(Input.GetMouseButtonDown(1))
+        {
+            MainManager.Instance.ChessManager.UIManager.SetPawnForPromotion(ChessPiece);
+        }
+    }
+
     private void OnMouseDown()
     {
         if(IsMyTurn)

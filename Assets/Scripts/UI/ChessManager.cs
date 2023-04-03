@@ -39,6 +39,7 @@ public class ChessManager : MonoBehaviour
                 
         Game.SetupBoard();
         Game.SetNextTurnCallBack(UpdateInfo);
+        Game.SetPromotionCallback(UIManager.SetPawnForPromotion);
 
         UpdateInfo();
     }
