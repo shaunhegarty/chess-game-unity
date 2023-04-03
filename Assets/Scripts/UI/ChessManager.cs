@@ -36,8 +36,9 @@ public class ChessManager : MonoBehaviour
     {
         MainManager.Instance.RegisterChessManager(this);
         Game = new Chess.ChessGame();
-                
+
         Game.SetupBoard();
+        // Game.SetupStalemateBoard();
         Game.SetNextTurnCallBack(UpdateInfo);
         Game.SetPromotionCallback(UIManager.SetPawnForPromotion);
 

@@ -21,38 +21,38 @@ namespace Chess
         public int Turn { get; private set; } = 1;
         public Team TeamTurn { get; private set; } = Team.White;
         public Team NonTeamTurn { get; private set; } = Team.Black;
-        public bool CheckMate { get { return checkState.isCheckMate; } }
+        public bool CheckMate { get { return checkState.isMate; } }
         public string LastMove = "";
 
         public delegate void NextTurnCallback();        
         private NextTurnCallback nextTurnCallback;
-        public void SetNextTurnCallBack(NextTurnCallback cb)
-        {
-            nextTurnCallback = cb;
-        }
+        public void SetNextTurnCallBack(NextTurnCallback cb) => nextTurnCallback = cb;
 
         public delegate void PromotionCallBack(Piece piece);
         private PromotionCallBack promotionCallBack;
-        public void SetPromotionCallback(PromotionCallBack pcb)
-        {
-            promotionCallBack = pcb;
-        }
+        public void SetPromotionCallback(PromotionCallBack pcb) => promotionCallBack = pcb;
 
-        public ChessGame()
-        {
-            board = new Board(boardSize);
-        }
+        public ChessGame() => board = new Board(boardSize);
 
-        private int IndexByTeam(Team team, int i)
-        {
-            return team == Team.White ? i : boardSize - i - 1;
-        }
+        private int IndexByTeam(Team team, int i) => team == Team.White ? i : boardSize - i - 1;
 
-        private Team GetOppositeTeam(Team team)
-        {
-            return team == Team.Black ? Team.White : Team.Black;
-        }
+        private Team GetOppositeTeam(Team team) => team == Team.Black ? Team.White : Team.Black;
 
+        public void SetupStalemateBoard()
+        {
+            pieces = new()
+            {
+                { Team.White, new() },
+                { Team.Black, new() }
+            };
+         
+            // King and Queen
+            AddPieceToBoard(PieceType.Queen, Team.Black, new(1, 7));
+            AddPieceToBoard(PieceType.Queen, Team.Black, new(7, 1));
+            AddPieceToBoard(PieceType.King, Team.Black, new(7, 7));
+            AddPieceToBoard(PieceType.King, Team.White, new(1, 1));
+            
+        }
         public void SetupBoard()
         {
             pieces = new() {
@@ -147,22 +147,15 @@ namespace Chess
             TeamTurn = Turn % 2 == 0 ? Team.Black : Team.White;
             NonTeamTurn = TeamTurn == Team.White ? Team.Black : Team.White;
 
-            if (CalculateCheckAll(NonTeamTurn))
+            var check = new Check
             {
-                var check = new Check();
-                check.teamInCheck = TeamTurn;
-                check.inCheck = true;
+                teamInCheck = TeamTurn,
+                inCheck = CalculateCheckAll(NonTeamTurn),
+                isMate = IsThatItMate(TeamTurn)
+            };
 
-                if (IsThatCheckMate(TeamTurn))
-                {
-                    check.isCheckMate = true;
-                }
-                
-                SetCheck(check);
-            } else
-            {
-                SetCheck(new Check());
-            }
+            SetCheck(check);
+
 
             nextTurnCallback?.Invoke();
 
@@ -303,12 +296,11 @@ namespace Chess
 
         }
 
-        public bool IsThatCheckMate(Team team)
-        { 
-            /* Determining CheckMate */
+        public bool IsThatItMate(Team team)
+        {             
             // Simulate every possible move for a given turn
-            // If any result in a non-check scenario, then it is not check mate
-            // Only need to do this if the king has been determined to be in check??
+            // If king is in check and any result in a non-check scenario, then it is not check mate
+            // If king is not in check and any result in a non-check scenario, then it is not stale mate            
         
             // Team X is in check, we want to find out if there is any way out. 
             // Get All the pieces for Team X
@@ -336,15 +328,19 @@ namespace Chess
                 }
             }
             return true;
-        }
+        }      
 
         public string GameInfo()
         {
             string checkMessage = "";
-            if (checkState.inCheck && checkState.isCheckMate)
+            if (checkState.inCheck && checkState.isMate)
             {
                 checkMessage = $"\nThat's Checkmate! {GetOppositeTeam(checkState.teamInCheck)} Wins!";
-            } else if(checkState.inCheck)
+            } else if(checkState.isMate)
+            {
+                checkMessage = $"\nOof! That's a stalemate! Nobody Wins!";
+            }
+            else if(checkState.inCheck)
             {
                 checkMessage = $"{checkState.teamInCheck} is in check!";
             }                
@@ -375,7 +371,7 @@ namespace Chess
         public struct Check
         {
             public bool inCheck;
-            public bool isCheckMate;
+            public bool isMate;            
             public Team teamInCheck;
         }
     }
