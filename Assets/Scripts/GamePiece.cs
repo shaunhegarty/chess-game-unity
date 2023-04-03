@@ -18,8 +18,7 @@ public class GamePiece : MonoBehaviour
     public BoardSquare currentSquare;
     private BoardSquare highlightedSquare;
     private List<BoardSquare> allowedSquares;
-    public List<BoardSquare> CanMoveTo { get { return allowedSquares; } }
-    public int MoveCount { get; private set; }
+
     public bool canRegicide = false;
     public Chess.Piece ChessPiece;
 
@@ -43,6 +42,14 @@ public class GamePiece : MonoBehaviour
         pieceRenderer.material = currentMaterial;
     }
 
+    public void UpdatePosition()
+    {
+        int rowIndex = ChessPiece.currentSquare.position.x;
+        int colIndex = ChessPiece.currentSquare.position.y;
+        BoardSquare square = MainManager.Instance.ChessManager.Board.AllSquares[rowIndex][colIndex];
+        SetPositionToTargetSquare(square);
+    }
+
     public void SetSquare(BoardSquare square)
     {
         currentSquare = square;
@@ -51,6 +58,7 @@ public class GamePiece : MonoBehaviour
     public void SetPiece(Chess.Piece piece)
     {
         ChessPiece = piece;
+        piece.SetOnMoveCallback(UpdatePosition);
     }
 
     void SetPositionToTargetSquare()
@@ -79,25 +87,6 @@ public class GamePiece : MonoBehaviour
     {        
         var squares = ChessPiece.GetValidSquares(simulate: true);
         allowedSquares = MainManager.Instance.ChessManager.SquaresToBoardSquares(squares);
-    }
-
-    private bool CheckCanRegicide()
-    {
-        foreach(BoardSquare square in allowedSquares)
-        {
-            if(square.occupant != null && square.occupant.team != team && square.occupant.IsKing)
-            {
-                return true;                
-            }
-        }
-        return false;
-    }
-
-    public bool GetAllValidMoves()
-    {
-        GetValidSquares();
-        canRegicide = CheckCanRegicide();
-        return canRegicide;
     }
 
     private bool IsMyTurn => team == MainManager.Instance.ChessManager.Game.TeamTurn && !MainManager.Instance.ChessManager.Game.CheckMate;

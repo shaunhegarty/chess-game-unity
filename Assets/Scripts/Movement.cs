@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using Chess;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -44,18 +45,21 @@ public abstract class Movement
 public abstract class DirectionalMovement : Movement
 {
     protected List<Vector2Int> directions;
+    protected int range = 0;
 
     public override List<Chess.Square> GetValidSquares(Chess.Board board, Vector2Int startLocation)
     {
         // move along each direction until we hit an obstacle
         // if it's on the opposing team, include that square, otherwise exclude it.        
 
-        List<Chess.Square> allowed = new();
+        int directionRange = range == 0 ? MainManager.Instance.GetBoard().Count : range;
+
+        List <Chess.Square> allowed = new();
         // try each direction
         foreach (Vector2Int direction in directions)
         {
             Chess.Square currentSquare = SquareFromIndex(board, startLocation);
-            for (int i = 1; i <= MainManager.Instance.GetBoard().Count; i++)
+            for (int i = 1; i <= directionRange; i++)
             {
                 Chess.Square square = SquareFromIndex(board, startLocation + direction * i);
                 if (square != null && (square.occupant == null || square.occupant.team != currentSquare.occupant.team))
@@ -86,29 +90,22 @@ public enum PieceType
     King, Queen, Bishop, Rook, Knight, Pawn
 }
 
-public class KingMovement : Movement
+public class KingMovement : DirectionalMovement
 {
-    private readonly float movementRange = Mathf.Sqrt(2);
-
-    public override List<Chess.Square> GetValidSquares(Chess.Board board, Vector2Int startLocation)
+    public KingMovement()
     {
-        List<Chess.Square> allowed = new();
-        Chess.Square currentSquare = SquareFromIndex(board, startLocation);
-        foreach (Chess.Square square in board.GetSquares())
+        directions = new()
         {
-            if (IsMoveAllowed(startLocation, square.position) 
-                && (square.occupant == null || square.occupant.team != currentSquare.occupant.team))
-            {
-                allowed.Add(square);
-            }
-        }
-        
-        return allowed;
-    }
-
-    public bool IsMoveAllowed(Vector2Int startLocation, Vector2Int endLocation)
-    {
-        return Vector2Int.Distance(startLocation, endLocation) <= movementRange;
+            new(1, 1),
+            new(-1, 1),
+            new(-1, -1),
+            new(1, -1),
+            new(1, 0),
+            new(0, 1),
+            new(-1, 0),
+            new(0, -1)
+        };
+        range = 1;
     }
 }
 
@@ -159,34 +156,23 @@ public class RookMovement : DirectionalMovement
     }
 }
 
-public class KnightMovement : Movement
+public class KnightMovement : DirectionalMovement
 {
-    private readonly List<Vector2Int> AllowedMoves = new() { new Vector2Int(1, 2), new Vector2Int(2, 1) };
-
-    public override List<Chess.Square> GetValidSquares(Chess.Board board, Vector2Int startLocation)
+    public KnightMovement()
     {
-        List<Chess.Square> allowed = new();
-        Chess.Square currentSquare = SquareFromIndex(board, startLocation);
-        foreach (Chess.Square square in board.GetSquares())
+        directions = new()
         {
-            if (IsMoveAllowed(startLocation, square.position)
-                && (square.occupant == null || square.occupant.team != currentSquare.occupant.team))
-            {
-                allowed.Add(square);
-            }
-        }
+            new(1, 2),
+            new(-1, 2),
+            new(-1, -2),
+            new(1, -2),
+            new(2, 1),
+            new(-2, 1),
+            new(-2, -1),
+            new(2, -1)
+        };
 
-        return allowed;
-    }
-
-    public bool IsMoveAllowed(Vector2Int startLocation, Vector2Int endLocation)
-    {
-        // Knights may move 2 steps in 1 direction and 1 another. No short steps
-        // That means the only permitted movements are (1, 2) and (2, 1)
-        var diff = endLocation - startLocation;
-        diff.x = Mathf.Abs(diff.x);
-        diff.y = Mathf.Abs(diff.y);
-        return AllowedMoves.Contains(diff);
+        range = 1;
     }
 }
 
@@ -197,16 +183,16 @@ public class PawnMovement : Movement
     private readonly List<Vector2Int> attackMoves = new() { new(1, 1), new(1, -1) };
         
 
-    public override List<Chess.Square> GetValidSquares(Chess.Board board, Vector2Int startLocation)
+    public override List<Square> GetValidSquares(Board board, Vector2Int startLocation)
     {
-        List<Chess.Square> allowed = new();
-        Chess.Square currentSquare = SquareFromIndex(board, startLocation);
-        Chess.Piece currentPiece = currentSquare.occupant;
+        List<Square> allowed = new();
+        Square currentSquare = SquareFromIndex(board, startLocation);
+        Piece currentPiece = currentSquare.occupant;
         
         // Adjust direction based on Team
         Vector2Int direction = new (currentPiece.team == Team.Black ? -1 : 1, 1);
 
-        Chess.Square baseMoveSquare = SquareFromIndex(board, startLocation + baseMove * direction);
+        Square baseMoveSquare = SquareFromIndex(board, startLocation + baseMove * direction);
         bool baseMoveBlocked = false;
         if (baseMoveSquare != null && baseMoveSquare.occupant == null)
         {
@@ -218,7 +204,7 @@ public class PawnMovement : Movement
 
         if (currentPiece.MoveCount == 0 && !baseMoveBlocked)
         {
-            Chess.Square doubleMoveSquare = SquareFromIndex(board, startLocation + doubleMove * direction);
+            Square doubleMoveSquare = SquareFromIndex(board, startLocation + doubleMove * direction);
             if (doubleMoveSquare != null && doubleMoveSquare.occupant == null)
             {
                 allowed.Add(doubleMoveSquare);
@@ -227,7 +213,7 @@ public class PawnMovement : Movement
 
         foreach (Vector2Int attackMove in attackMoves)
         {
-            Chess.Square attackMoveSquare = SquareFromIndex(board, startLocation + attackMove * direction);
+            Square attackMoveSquare = SquareFromIndex(board, startLocation + attackMove * direction);
             if (attackMoveSquare != null && attackMoveSquare.occupant != null && attackMoveSquare.occupant.team != currentPiece.team)
             {
                 allowed.Add(attackMoveSquare);

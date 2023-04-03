@@ -28,11 +28,6 @@ public class BoardSquare : MonoBehaviour
     bool movementCandidate = false;    
     public GamePiece occupant;
 
-    // properties
-    public int Column { get { return Index.y; } }
-    public char ColumnLetter { get { return (char)('A' + Index.y); } }
-    public int Row { get { return Index.x + 1; } }
-
 
     void Start()
     {
@@ -54,7 +49,7 @@ public class BoardSquare : MonoBehaviour
     public void SetIndex(Vector2Int index)
     {
         Index = index;
-        IndexText.text = $"{ColumnLetter}{Row}";
+        IndexText.text = $"{Chess.Square.LabelFromPosition(Index)}";
     }
 
     public void SetOccupant(GamePiece piece)

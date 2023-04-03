@@ -17,15 +17,15 @@ namespace Chess
         public Board board;
         public Dictionary<Team, List<Piece>> pieces = new();
         private Check checkState = new();
+
         public int Turn { get; private set; } = 1;
         public Team TeamTurn { get; private set; } = Team.White;
         public Team NonTeamTurn { get; private set; } = Team.Black;
         public bool CheckMate { get { return checkState.isCheckMate; } }
         public string LastMove = "";
 
-        public delegate void NextTurnCallback();
+        public delegate void NextTurnCallback();        
         private NextTurnCallback nextTurnCallback;
-
         public void SetNextTurnCallBack(NextTurnCallback cb)
         {
             nextTurnCallback = cb;
@@ -107,9 +107,12 @@ namespace Chess
             targetSquare.RemovePiece();
             targetSquare.AddPiece(piece);
 
-            piece.PostMove();
+            // Was this a castle move?
+            if(piece.type == PieceType.King && Vector2Int.Distance(oldSquare.position, targetPosition) == 2) {
+                DoCastle(piece.team);
+            }
 
-            
+            piece.PostMove();            
 
             NextTurn();
         }
@@ -160,6 +163,60 @@ namespace Chess
             throw new KeyNotFoundException("Can't find the King!");
         }
 
+        public List<Piece> GetRooks(Team team)
+        {
+            List<Piece> rooks = new();
+            pieces.TryGetValue(team, out List<Piece> teamPieces);
+            foreach (Piece piece in teamPieces)
+            {
+                if (piece.type == PieceType.Rook)
+                {
+                    rooks.Add(piece);
+                }
+            }
+            return rooks;
+        }
+
+        public void DoCastle(Team team)
+        {
+            // Assumes the King has already been moved its two places
+            var rooks = GetRooks(team);
+            var king = GetKing(team);
+
+            // Once the king's two step move is done we need to re-establish which is the correct rook in context
+            float distance = float.MaxValue;
+            Piece closestRook = null;
+
+            foreach (Piece rook in rooks)
+            {
+                if(rook.currentSquare != null)
+                {
+                    float toKing = Vector2Int.Distance(rook.currentSquare.position, king.currentSquare.position);
+                    if (toKing < distance)
+                    {
+                        closestRook = rook;
+                        distance = toKing;
+                    }
+                }                
+            }
+
+            if(closestRook != null)
+            {
+                Vector2Int rookDirection = closestRook.currentSquare.position - king.currentSquare.position;
+                rookDirection.y = Math.Sign(rookDirection.y);  // normalize of sorts
+
+                var targetSquare = GetSquareByPosition(king.currentSquare.position - rookDirection);
+                closestRook.currentSquare.RemovePiece();
+                targetSquare.AddPiece(closestRook);
+                closestRook.PostMove();
+            }
+        }
+
+        public bool IsTeamInCheck(Team team)
+        {
+            return checkState.inCheck && checkState.teamInCheck == team;
+        }
+
         public bool CalculateCheckAll(Team team)
         {
             // Can pieces of a given team reach the opposing King
@@ -179,7 +236,7 @@ namespace Chess
             return isInCheck;
         }
 
-        public void SimulateMoveUnderCheck(Piece piece, Vector2Int targetPosition, out bool stillInCheck)
+        public void SimulateMove(Piece piece, Vector2Int targetPosition, out bool stillInCheck)
         {
             /* Simulating a move */
             // Update the board state
@@ -234,7 +291,7 @@ namespace Chess
                 // simulate each move, and see if it still results in check
                 foreach (var move in allowedSquares)
                 {
-                    SimulateMoveUnderCheck(piece, move.position, out bool stillInCheck);
+                    SimulateMove(piece, move.position, out bool stillInCheck);
                     if(!stillInCheck)
                     {
                         return false;
@@ -338,19 +395,6 @@ namespace Chess
         {
             return internalBoard[position.x][position.y];
         }
-
-        public List<Square> GetSquares()
-        {
-            List<Square> squares = new();
-            foreach (List<Square> row in internalBoard)
-            {
-                foreach (Square square in row)
-                {
-                    squares.Add(square);
-                }
-            }
-            return squares;
-        }
     }
 
     public class Piece
@@ -370,6 +414,9 @@ namespace Chess
         // Property
         public bool IsKing { get { return type == PieceType.King; } }
 
+        public delegate void OnMoveCallback();
+        private OnMoveCallback onMoveCallback;
+        public void SetOnMoveCallback(OnMoveCallback onMoveCb) => onMoveCallback = onMoveCb;
 
         public Piece(PieceType pieceType, Team pieceTeam, ChessGame game)
         {
@@ -379,11 +426,11 @@ namespace Chess
             Game = game;
         }
         
-
         // PostMove updates and calculations
         public void PostMove()
         {            
             MoveCount++;
+            onMoveCallback?.Invoke();
         }
 
         public List<Square> GetValidSquares(bool simulate)
@@ -399,20 +446,62 @@ namespace Chess
                 List<Square> slimMoves = new();
                 foreach(var move in moves)
                 {
-                    Game.SimulateMoveUnderCheck(this, move.position, out bool stillInCheck);
-                    if (!stillInCheck)
+                    Game.SimulateMove(this, move.position, out bool InCheck);
+                    if (!InCheck)
                     {
                         slimMoves.Add(move);
                     }
                 }
+
+                // Castle Checks
+                slimMoves.AddRange(GetCastleMoves());
+
                 return slimMoves;
             } else
             {
                 return moves;
-            }
-            
+            }                        
+        }
 
-            
+        private List<Square> GetCastleMoves()
+        {
+            List<Square> castleMoves = new();
+            if (!Game.IsTeamInCheck(team) && type == PieceType.King && MoveCount == 0)
+            {
+                foreach (Piece rook in Game.GetRooks(team))
+                {
+                    if (rook.MoveCount == 0)
+                    {
+                        // Get the rook direction
+                        Vector2Int rookDirection = rook.currentSquare.position - currentSquare.position;
+                        rookDirection.y = Math.Sign(rookDirection.y);
+
+                        // check each space on the way to the rook
+                        bool allowed = true;
+                        for (int i = 1; i <= 2 && allowed; i++)
+                        {
+                            Square interSquare = Game.board.GetSquare(currentSquare.position - i * rookDirection);
+                            if (interSquare.state == SquareState.Occupied)
+                            {
+                                allowed = false;
+                            }
+                            if (allowed)
+                            {
+                                Game.SimulateMove(this, interSquare.position, out bool InCheck);
+                                if (InCheck)
+                                {
+                                    allowed = false;
+                                }
+                            }
+                        }
+                        if (allowed)
+                        {
+                            castleMoves.Add(Game.board.GetSquare(currentSquare.position - 2 * rookDirection));
+                        }
+                    }
+                }
+            }
+            return castleMoves;
         }
 
         public override string ToString()
