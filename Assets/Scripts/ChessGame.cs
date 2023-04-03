@@ -101,17 +101,26 @@ namespace Chess
             LastMove = $"Moved {piece} to {Square.LabelFromPosition(targetPosition)}";
 
             Square oldSquare = piece.currentSquare;
-            oldSquare.RemovePiece();
-
             Square targetSquare = GetSquareByPosition(targetPosition);
+
+            piece.AddMove(new Move(oldSquare.position, targetPosition, Turn));
+            // Was that an en passant !?!?
+            if (piece.WasLastMovePawnAttack())
+            {
+                DoEnPassant(piece);
+            }
+
+            oldSquare.RemovePiece();
             targetSquare.RemovePiece();
             targetSquare.AddPiece(piece);
 
+
+
             // Was this a castle move?
-            if(piece.type == PieceType.King && Vector2Int.Distance(oldSquare.position, targetPosition) == 2) {
+            if (piece.type == PieceType.King && Vector2Int.Distance(oldSquare.position, targetPosition) == 2) {
                 DoCastle(piece.team);
             }
-
+            
             piece.PostMove();            
 
             NextTurn();
@@ -175,6 +184,20 @@ namespace Chess
                 }
             }
             return rooks;
+        }
+
+        public void DoEnPassant(Piece passingPawn)
+        {
+            Move lastMove = passingPawn.LastMove();
+            int direction = passingPawn.team == Team.Black ? -1 : 1;
+            Vector2Int attackPosition = lastMove.To - new Vector2Int(direction, 0);
+            var attackSquare = GetSquareByPosition(attackPosition);
+            var attackPiece = attackSquare.occupant;
+            if (attackPiece.EnPassantable)
+            {
+                attackSquare.RemovePiece();
+                attackPiece.PostMove();
+            }            
         }
 
         public void DoCastle(Team team)
@@ -408,11 +431,27 @@ namespace Chess
 
         // State
         public Square currentSquare;
-        public int MoveCount { get; private set; }
+        public int MoveCount { get { return movesList.Count; } }
         public List<Square> allowedSquares;
+
+        private List<Move> movesList = new();
 
         // Property
         public bool IsKing { get { return type == PieceType.King; } }
+        public bool EnPassantable { get 
+            {
+                if (type != PieceType.Pawn)
+                {
+                    return false;
+                }
+                var lastMove = LastMove();
+                if(lastMove != null) {
+                    bool oneTurnAgo = Game.Turn - lastMove.Turn == 1;
+                    return type == PieceType.Pawn && MoveCount > 0 && oneTurnAgo && lastMove.Distance == 2;
+                }
+                return false;                
+            }
+        }
 
         public delegate void OnMoveCallback();
         private OnMoveCallback onMoveCallback;
@@ -429,7 +468,6 @@ namespace Chess
         // PostMove updates and calculations
         public void PostMove()
         {            
-            MoveCount++;
             onMoveCallback?.Invoke();
         }
 
@@ -508,6 +546,68 @@ namespace Chess
         {
             return $"{team} {type} @ {currentSquare}";
         }
+
+        public void AddMove(Move move)
+        {
+            movesList.Add(move);
+        }
+
+        public Move LastMove()
+        {
+            if(movesList.Count > 0)
+            {
+                return movesList[^1];
+            }
+            return null;
+        }
+
+        public bool WasLastMovePawnAttack()
+        {
+            // Should try to reuse code from the Movement class if possible
+            if(type == PieceType.Pawn)
+            {
+                Move lastMove = LastMove();
+                if (lastMove != null)
+                {
+                    // This direction stuff is getting reused, should probably abstract it away a bit.
+                    Vector2Int teamDirection = new(team == Team.Black ? -1 : 1, 1);
+                    PawnMovement movement = (PawnMovement)PieceMovement;
+                    return movement.attackMoves.Contains(lastMove.Direction * teamDirection);
+                }
+                
+            }
+            return false;
+        }
+    }
+
+    public class Move
+    {
+        Vector2Int from;
+        Vector2Int to;
+        readonly int turn;
+
+        public Move(Vector2Int moveFrom, Vector2Int moveTo, int moveTurn)
+        {
+            // Ensure it's a copy
+            from = new(moveFrom.x, moveFrom.y);
+            to = new(moveTo.x, moveTo.y);
+            turn = moveTurn;
+        }
+
+        public Vector2Int Direction => to - from;
+        public float Distance => Vector2Int.Distance(from, to);
+
+        public Vector2Int To { get => to; }
+        public Vector2Int From { get => from; }
+
+        public int Turn => turn;
+
+        public override string ToString()
+        {
+            return $"{Square.LabelFromPosition(from)} to {Square.LabelFromPosition(to)} on turn {turn}";
+        }
     }
 }
+
+
 

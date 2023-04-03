@@ -180,8 +180,9 @@ public class PawnMovement : Movement
 {    
     private Vector2Int baseMove = new(1, 0);
     private Vector2Int doubleMove = new(2, 0);
-    private readonly List<Vector2Int> attackMoves = new() { new(1, 1), new(1, -1) };
-        
+    public readonly List<Vector2Int> attackMoves = new() { new(1, 1), new(1, -1) };
+    private readonly List<Vector2Int> enPassantMoves = new() { new(0, 1), new(0, -1) };
+
 
     public override List<Square> GetValidSquares(Board board, Vector2Int startLocation)
     {
@@ -216,6 +217,20 @@ public class PawnMovement : Movement
             Square attackMoveSquare = SquareFromIndex(board, startLocation + attackMove * direction);
             if (attackMoveSquare != null && attackMoveSquare.occupant != null && attackMoveSquare.occupant.team != currentPiece.team)
             {
+                allowed.Add(attackMoveSquare);
+            }
+        }
+
+        for (int i = 0; i < 2; i++)
+        {
+            Vector2Int enPassantMove = enPassantMoves[i];
+            Square enPassantMoveSquare = SquareFromIndex(board, startLocation + enPassantMove * direction);
+            if (enPassantMoveSquare != null && enPassantMoveSquare.occupant != null && enPassantMoveSquare.occupant.team != currentPiece.team
+                && enPassantMoveSquare.occupant.EnPassantable )
+            {
+                // Add the corresponding attack move, because chess!
+                Vector2Int attackMove = attackMoves[i];
+                Square attackMoveSquare = SquareFromIndex(board, startLocation + attackMove * direction);
                 allowed.Add(attackMoveSquare);
             }
         }

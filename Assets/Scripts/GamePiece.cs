@@ -44,10 +44,17 @@ public class GamePiece : MonoBehaviour
 
     public void UpdatePosition()
     {
-        int rowIndex = ChessPiece.currentSquare.position.x;
-        int colIndex = ChessPiece.currentSquare.position.y;
-        BoardSquare square = MainManager.Instance.ChessManager.Board.AllSquares[rowIndex][colIndex];
-        SetPositionToTargetSquare(square);
+        if(ChessPiece.currentSquare != null)
+        {
+            int rowIndex = ChessPiece.currentSquare.position.x;
+            int colIndex = ChessPiece.currentSquare.position.y;
+            BoardSquare square = MainManager.Instance.ChessManager.Board.AllSquares[rowIndex][colIndex];
+            SetPositionToTargetSquare(square);
+        } else
+        {
+            PieceAttacked();
+        }
+        
     }
 
     public void SetSquare(BoardSquare square)
